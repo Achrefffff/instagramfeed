@@ -1,4 +1,3 @@
-// Page de succès qui ferme la popup
 export default function InstagramSuccess() {
   return (
     <html>

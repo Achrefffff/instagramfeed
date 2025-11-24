@@ -1,13 +1,29 @@
-import { Form } from "react-router";
+import { Form, useNavigate } from "react-router";
 import { useState } from "react";
 
-export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [] }) {
+export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], shop }) {
+  const navigate = useNavigate();
   const [selectedAccount, setSelectedAccount] = useState('all');
+  const [likesRange, setLikesRange] = useState('all');
+  const [postType, setPostType] = useState('all');
   
-  // Filtrer les posts selon le compte sélectionné
-  const filteredPosts = selectedAccount === 'all' 
-    ? posts 
-    : posts.filter(post => post.accountUsername === selectedAccount);
+  const filteredPosts = posts
+    .filter(post => selectedAccount === 'all' || post.accountUsername === selectedAccount)
+    .filter(post => {
+      if (postType === 'all') return true;
+      if (postType === 'published') return !post.isTagged;
+      if (postType === 'tagged') return post.isTagged;
+      return true;
+    })
+    .filter(post => {
+      if (likesRange === 'all') return true;
+      if (likesRange === '0-50') return post.likeCount < 50;
+      if (likesRange === '50-100') return post.likeCount >= 50 && post.likeCount < 100;
+      if (likesRange === '100-500') return post.likeCount >= 100 && post.likeCount < 500;
+      if (likesRange === '500-1000') return post.likeCount >= 500 && post.likeCount < 1000;
+      if (likesRange === '1000+') return post.likeCount >= 1000;
+      return true;
+    });
 
   if (posts.length === 0) {
     return (
@@ -65,7 +81,6 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [] }
   return (
     <s-section heading="Vos posts Instagram">
       <s-stack direction="block" gap="base">
-        {/* En-tête avec statistiques et filtres */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -77,6 +92,41 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [] }
             <s-text variant="bodySm">
               {accountsCount} compte{accountsCount > 1 ? 's' : ''} • {filteredPosts.length} post{filteredPosts.length > 1 ? 's' : ''}
             </s-text>
+            
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {accounts.map((account) => (
+                <div key={account.id} style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px',
+                  padding: '4px 8px',
+                  backgroundColor: '#f6f6f7',
+                  borderRadius: '6px',
+                  fontSize: '13px'
+                }}>
+                  <span>@{account.username}</span>
+                  <Form method="post" style={{ margin: 0, display: 'inline' }}>
+                    <input type="hidden" name="action" value="disconnect" />
+                    <input type="hidden" name="accountId" value={account.id} />
+                    <button 
+                      type="submit" 
+                      style={{ 
+                        padding: '2px 6px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        lineHeight: '1',
+                        color: '#bf0711'
+                      }}
+                      title="Déconnecter ce compte"
+                    >
+                      ×
+                    </button>
+                  </Form>
+                </div>
+              ))}
+            </div>
             
             {accountsCount > 1 && (
               <select 
@@ -98,29 +148,100 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [] }
                 ))}
               </select>
             )}
+            
+            <select 
+              value={postType}
+              onChange={(e) => setPostType(e.target.value)}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #c9cccf',
+                borderRadius: '6px',
+                fontSize: '14px',
+                backgroundColor: '#fff'
+              }}
+            >
+              <option value="all">Tous les posts</option>
+              <option value="published">Posts publiés</option>
+              <option value="tagged">Posts tagués</option>
+            </select>
+            
+            <select 
+              value={likesRange}
+              onChange={(e) => setLikesRange(e.target.value)}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #c9cccf',
+                borderRadius: '6px',
+                fontSize: '14px',
+                backgroundColor: '#fff'
+              }}
+            >
+              <option value="all">Tous les likes</option>
+              <option value="0-50">0 - 50 likes</option>
+              <option value="50-100">50 - 100 likes</option>
+              <option value="100-500">100 - 500 likes</option>
+              <option value="500-1000">500 - 1000 likes</option>
+              <option value="1000+">1000+ likes</option>
+            </select>
           </div>
           
-          <Form method="post">
-            <input type="hidden" name="action" value="disconnect_all" />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button 
-              type="submit" 
+              onClick={() => {
+                const popup = window.open(
+                  `/api/instagram/connect?shop=${encodeURIComponent(shop)}`, 
+                  'instagram-auth', 
+                  'width=600,height=700'
+                );
+                
+                if (!popup) {
+                  alert('Veuillez autoriser les popups pour connecter Instagram');
+                  return;
+                }
+                
+                const checkPopup = setInterval(() => {
+                  if (popup.closed) {
+                    clearInterval(checkPopup);
+                    console.log('Popup fermée - rechargement...');
+                    navigate('/app', { replace: true });
+                  }
+                }, 300);
+              }}
               style={{ 
                 padding: '8px 16px', 
-                backgroundColor: '#fff', 
-                border: '1px solid #c9cccf', 
+                backgroundColor: '#008060', 
+                border: 'none', 
                 borderRadius: '6px', 
                 cursor: 'pointer', 
                 fontSize: '14px', 
                 fontWeight: '500', 
-                color: '#bf0711'
+                color: '#fff'
               }}
             >
-              Déconnecter tout
+              + Ajouter un compte
             </button>
-          </Form>
+            
+            <Form method="post">
+              <input type="hidden" name="action" value="disconnect_all" />
+              <button 
+                type="submit" 
+                style={{ 
+                  padding: '8px 16px', 
+                  backgroundColor: '#fff', 
+                  border: '1px solid #c9cccf', 
+                  borderRadius: '6px', 
+                  cursor: 'pointer', 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#bf0711'
+                }}
+              >
+                Déconnecter tout
+              </button>
+            </Form>
+          </div>
         </div>
 
-        {/* Grille des posts */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', 
@@ -133,10 +254,9 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [] }
               overflow: 'hidden',
               backgroundColor: '#fff'
             }}>
-              {/* Média */}
-              {post.media_type === 'IMAGE' || post.media_type === 'CAROUSEL_ALBUM' ? (
+              {post.mediaType === 'IMAGE' || post.mediaType === 'CAROUSEL_ALBUM' ? (
                 <img 
-                  src={post.media_url} 
+                  src={post.mediaUrl} 
                   alt={post.caption || 'Instagram post'} 
                   style={{ 
                     width: '100%', 
@@ -146,9 +266,9 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [] }
                   }} 
                   loading="lazy"
                 />
-              ) : post.media_type === 'VIDEO' ? (
+              ) : post.mediaType === 'VIDEO' ? (
                 <video 
-                  src={post.media_url} 
+                  src={post.mediaUrl} 
                   style={{ 
                     width: '100%', 
                     height: '200px', 
@@ -159,7 +279,6 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [] }
                 />
               ) : null}
               
-              {/* Contenu */}
               <div style={{ padding: '12px' }}>
                 <div style={{ 
                   display: 'flex', 
@@ -175,20 +294,51 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [] }
                   </s-text>
                 </div>
                 
-                {(post.like_count !== undefined || post.comments_count !== undefined) && (
+                <div style={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  marginBottom: '8px',
+                  fontSize: '11px',
+                  color: '#6d7175'
+                }}>
+                  {post.likeCount > 0 && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      ❤️ {post.likeCount}
+                    </span>
+                  )}
+                  {post.commentsCount > 0 && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      💬 {post.commentsCount}
+                    </span>
+                  )}
+                  {post.impressions && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      👁️ {post.impressions.toLocaleString()}
+                    </span>
+                  )}
+                  {post.reach && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      📈 {post.reach.toLocaleString()}
+                    </span>
+                  )}
+                  {post.saved && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      💾 {post.saved}
+                    </span>
+                  )}
+                </div>
+                
+                {post.hashtags && (
                   <div style={{ 
-                    display: 'flex', 
-                    gap: '12px',
+                    fontSize: '11px',
+                    color: '#005bd3',
                     marginBottom: '8px',
-                    fontSize: '12px',
-                    color: '#6d7175'
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
                   }}>
-                    {post.like_count !== undefined && (
-                      <span>❤️ {post.like_count} j'aime{post.like_count > 1 ? 's' : ''}</span>
-                    )}
-                    {post.comments_count !== undefined && (
-                      <span>💬 {post.comments_count} commentaire{post.comments_count > 1 ? 's' : ''}</span>
-                    )}
+                    {post.hashtags}
                   </div>
                 )}
                 

@@ -9,12 +9,8 @@ export const loader = async ({ request }) => {
     throw new Response("Missing shop parameter", { status: 400 });
   }
   
-  // Générer un state unique pour la sécurité OAuth
   const state = `${shop}-${Date.now()}`;
-  
-  // Générer l'URL d'autorisation Instagram
   const authUrl = instagram.getAuthUrl(state);
   
-  // Rediriger vers Instagram pour l'autorisation
   throw redirect(authUrl);
 };

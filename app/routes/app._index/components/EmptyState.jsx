@@ -1,22 +1,27 @@
-import { useEffect } from 'react';
+import { useNavigate } from 'react-router';
 
 export function EmptyState({ shop }) {
+  const navigate = useNavigate();
+  
   const handleConnect = () => {
-    // Ouvrir dans une nouvelle fenêtre pour éviter les problèmes d'iframe
     const popup = window.open(
       `/api/instagram/connect?shop=${encodeURIComponent(shop)}`, 
       'instagram-auth', 
       'width=600,height=700'
     );
     
-    // Vérifier si la popup est fermée toutes les secondes
+    if (!popup) {
+      alert('Veuillez autoriser les popups pour connecter Instagram');
+      return;
+    }
+    
     const checkPopup = setInterval(() => {
-      if (popup && popup.closed) {
+      if (popup.closed) {
         clearInterval(checkPopup);
-        // Recharger la page pour voir si la connexion a réussi
-        window.location.reload();
+        console.log('Popup fermée - rechargement...');
+        navigate('/app', { replace: true });
       }
-    }, 1000);
+    }, 300);
   };
 
   return (

@@ -1,13 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
   provider = "sqlite"
   url      = "file:dev.sqlite"
@@ -45,14 +39,29 @@ model InstagramConfig {
 }
 
 model InstagramPost {
-  id        String   @id
-  shop      String
-  mediaUrl  String
-  permalink String
-  caption   String?
-  timestamp DateTime
-  mediaType String
-  createdAt DateTime @default(now())
+  id            String   @id
+  shop          String
+  username      String
+  isTagged      Boolean  @default(false)
+  mediaUrl      String
+  permalink     String
+  caption       String?
+  timestamp     DateTime
+  mediaType     String
+  likeCount     Int      @default(0)
+  commentsCount Int      @default(0)
+  impressions   Int?
+  reach         Int?
+  saved         Int?
+  hashtags      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
+  @@index([shop, username])
   @@index([shop, timestamp])
+  @@index([shop, likeCount])
+  @@index([shop, commentsCount])
+  @@index([shop, impressions])
+  @@index([shop, reach])
+  @@index([shop, saved])
 }

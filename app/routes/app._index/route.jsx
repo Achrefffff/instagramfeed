@@ -10,9 +10,6 @@ import {
   ConfiguredState,
 } from "./components";
 
-/**
- * Récupère les posts Instagram pour un compte donné
- */
 async function fetchInstagramPostsForAccount(config) {
   try {
     const pages = await instagram.getInstagramAccounts(config.accessToken);
@@ -27,35 +24,67 @@ async function fetchInstagramPostsForAccount(config) {
     }
 
     const instagramId = pageWithInstagram.instagram_business_account.id;
-    const posts = await instagram.getInstagramPosts(instagramId, config.accessToken);
     
-    // Sauvegarder les posts en base de données
+    const [publishedPosts, taggedPosts] = await Promise.all([
+      instagram.getInstagramPosts(instagramId, config.accessToken),
+      instagram.getTaggedPosts(instagramId, config.accessToken)
+    ]);
+    
+    const allPosts = [
+      ...publishedPosts.map(p => ({ ...p, isTagged: false })),
+      ...taggedPosts.map(p => ({ ...p, isTagged: true }))
+    ];
+    
     await Promise.all(
-      posts.map(post => 
-        prisma.instagramPost.upsert({
+      allPosts.map(async (post) => {
+        let insights = { impressions: null, reach: null, saved: null };
+        try {
+          insights = await instagram.getPostInsights(post.id, config.accessToken);
+        } catch (error) {
+          console.warn(`Could not fetch insights for post ${post.id}:`, error.message);
+        }
+
+        const hashtags = instagram.extractHashtags(post.caption);
+
+        return prisma.instagramPost.upsert({
           where: { id: post.id },
           update: {
+            username: config.username,
+            isTagged: post.isTagged,
             caption: post.caption || null,
             mediaUrl: post.media_url,
             permalink: post.permalink,
             timestamp: new Date(post.timestamp),
             mediaType: post.media_type,
+            likeCount: post.like_count ?? 0,
+            commentsCount: post.comments_count ?? 0,
+            impressions: insights.impressions,
+            reach: insights.reach,
+            saved: insights.saved,
+            hashtags,
           },
           create: {
             id: post.id,
             shop: config.shop,
+            username: config.username,
+            isTagged: post.isTagged,
             caption: post.caption || null,
             mediaUrl: post.media_url,
             permalink: post.permalink,
             timestamp: new Date(post.timestamp),
             mediaType: post.media_type,
+            likeCount: post.like_count ?? 0,
+            commentsCount: post.comments_count ?? 0,
+            impressions: insights.impressions,
+            reach: insights.reach,
+            saved: insights.saved,
+            hashtags,
           },
-        })
-      )
+        });
+      })
     );
     
-    // Ajouter l'identifiant du compte aux posts pour le tracking
-    return posts.map(post => ({
+    return allPosts.map(post => ({
       ...post,
       accountUsername: config.username,
       configId: config.id
@@ -67,7 +96,6 @@ async function fetchInstagramPostsForAccount(config) {
       timestamp: new Date().toISOString()
     });
     
-    // Désactiver le compte si le token est invalide
     if (error.message.includes('token') || error.message.includes('auth')) {
       try {
         await prisma.instagramConfig.update({
@@ -89,7 +117,6 @@ export const loader = async ({ request }) => {
     const { session } = await authenticate.admin(request);
     const shop = session.shop;
 
-    // Récupérer les configurations actives avec index optimisé
     const configs = await prisma.instagramConfig.findMany({
       where: { 
         shop, 
@@ -100,21 +127,17 @@ export const loader = async ({ request }) => {
       }
     });
 
-    let posts = [];
     let errors = [];
 
     if (configs.length > 0) {
-      // Traitement parallèle des comptes pour de meilleures performances
-      const postPromises = configs.map(config => 
+      const syncPromises = configs.map(config => 
         fetchInstagramPostsForAccount(config)
       );
       
-      const results = await Promise.allSettled(postPromises);
+      const results = await Promise.allSettled(syncPromises);
       
       results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          posts.push(...result.value);
-        } else {
+        if (result.status === 'rejected') {
           errors.push({
             configId: configs[index].id,
             username: configs[index].username,
@@ -122,15 +145,35 @@ export const loader = async ({ request }) => {
           });
         }
       });
-      
-      // Trier les posts par date (plus récents en premier)
-      posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     }
+
+    const activeUsernames = configs.map(c => c.username);
+    const posts = await prisma.instagramPost.findMany({
+      where: { 
+        shop,
+        username: {
+          in: activeUsernames
+        }
+      },
+      orderBy: {
+        timestamp: 'desc'
+      },
+      take: 100,
+    });
+
+    const postsWithAccount = posts.map(post => {
+      const config = configs.find(c => c.username === post.username);
+      return {
+        ...post,
+        accountUsername: post.username,
+        configId: config?.id,
+      };
+    });
 
     return {
       shop,
       isConfigured: configs.length > 0,
-      posts,
+      posts: postsWithAccount,
       accountsCount: configs.length,
       accounts: configs.map(config => ({
         id: config.id,
@@ -147,7 +190,6 @@ export const loader = async ({ request }) => {
       timestamp: new Date().toISOString()
     });
     
-    // Retourner un état d'erreur plutôt que de faire planter l'app
     return {
       shop: 'unknown',
       isConfigured: false,
@@ -172,7 +214,7 @@ export default function Index() {
 
   return (
     <s-page heading="Instagram Feed">
-      <WelcomeSection />
+      {!isConfigured && <WelcomeSection />}
       
       {errors && errors.length > 0 && (
         <s-section variant="critical">
@@ -194,6 +236,7 @@ export default function Index() {
           posts={posts} 
           accountsCount={accountsCount}
           accounts={accounts}
+          shop={shop}
         />
       )}
     </s-page>
@@ -210,12 +253,10 @@ export const action = async ({ request }) => {
     switch (actionType) {
       case "disconnect": {
         const accountId = formData.get("accountId");
-        
         if (!accountId) {
           return data({ error: "Missing account ID" }, { status: 400 });
         }
 
-        // Vérifier que le compte appartient bien au shop
         const config = await prisma.instagramConfig.findFirst({
           where: { 
             id: accountId,

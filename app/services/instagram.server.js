@@ -1,9 +1,3 @@
-/**
- * Service Instagram pour gérer l'API Facebook/Instagram
- * Gère l'authentification OAuth et la récupération des données Instagram
- */
-
-// Validation des variables d'environnement
 const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
 const REDIRECT_URI = process.env.INSTAGRAM_REDIRECT_URI;
@@ -14,7 +8,6 @@ if (!INSTAGRAM_APP_ID || !INSTAGRAM_APP_SECRET || !REDIRECT_URI) {
   );
 }
 
-// Constantes API
 const FACEBOOK_API_VERSION = 'v18.0';
 const FACEBOOK_GRAPH_URL = `https://graph.facebook.com/${FACEBOOK_API_VERSION}`;
 const OAUTH_SCOPES = [
@@ -26,9 +19,6 @@ const OAUTH_SCOPES = [
   'instagram_manage_insights',
 ].join(',');
 
-/**
- * Classe d'erreur personnalisée pour les erreurs Instagram API
- */
 class InstagramAPIError extends Error {
   constructor(message, statusCode, response) {
     super(message);
@@ -38,9 +28,6 @@ class InstagramAPIError extends Error {
   }
 }
 
-/**
- * Effectue une requête HTTP avec gestion d'erreurs
- */
 async function fetchWithErrorHandling(url, options = {}) {
   try {
     const response = await fetch(url, options);
@@ -114,7 +101,6 @@ export const instagram = {
       throw new InstagramAPIError('No access token in response', 500, data);
     }
     
-    // Échanger le short-lived token contre un long-lived token (60 jours)
     return this.getLongLivedToken(data.access_token);
   },
 
@@ -219,7 +205,92 @@ export const instagram = {
     
     return data.data || [];
   },
+
+  /**
+   * Récupère les insights (statistiques avancées) d'un post
+   * @param {string} mediaId - ID du post Instagram
+   * @param {string} accessToken - Token d'accès
+   * @returns {Promise<Object>} Insights du post (impressions, reach, saved)
+   */
+  async getPostInsights(mediaId, accessToken) {
+    if (!mediaId || !accessToken) {
+      throw new Error('Media ID and access token are required');
+    }
+
+    const metrics = 'impressions,reach,saved';
+    const url = `${FACEBOOK_GRAPH_URL}/${mediaId}/insights?metric=${metrics}&access_token=${accessToken}`;
+    
+    try {
+      const data = await fetchWithErrorHandling(url);
+      
+      const insights = {};
+      if (data.data && Array.isArray(data.data)) {
+        data.data.forEach(metric => {
+          insights[metric.name] = metric.values?.[0]?.value || 0;
+        });
+      }
+      
+      return {
+        impressions: insights.impressions || 0,
+        reach: insights.reach || 0,
+        saved: insights.saved || 0,
+      };
+    } catch (error) {
+      console.warn(`Insights not available for media ${mediaId}:`, error.message);
+      return {
+        impressions: null,
+        reach: null,
+        saved: null,
+      };
+    }
+  },
+
+  /**
+   * Récupère les posts où le compte Instagram est tagué
+   * @param {string} instagramAccountId - ID du compte Instagram Business
+   * @param {string} accessToken - Token d'accès
+   * @returns {Promise<Array>} Liste des posts où le compte est tagué
+   */
+  async getTaggedPosts(instagramAccountId, accessToken) {
+    if (!instagramAccountId || !accessToken) {
+      throw new Error('Instagram account ID and access token are required');
+    }
+
+    const fields = [
+      'id',
+      'caption',
+      'media_type',
+      'media_url',
+      'permalink',
+      'timestamp',
+      'like_count',
+      'comments_count',
+    ].join(',');
+
+    const url = `${FACEBOOK_GRAPH_URL}/${instagramAccountId}/tags?fields=${fields}&access_token=${accessToken}`;
+    
+    try {
+      const data = await fetchWithErrorHandling(url);
+      return data.data || [];
+    } catch (error) {
+      console.warn(`Tagged posts not available for account ${instagramAccountId}:`, error.message);
+      return [];
+    }
+  },
+
+  /**
+   * Extrait les hashtags d'une caption
+   * @param {string} caption - Texte de la légende du post
+   * @returns {string|null} Hashtags séparés par des virgules
+   */
+  extractHashtags(caption) {
+    if (!caption) return null;
+    
+    const hashtagRegex = /#[\wÀ-ſ]+/g;
+    const hashtags = caption.match(hashtagRegex);
+    
+    return hashtags ? hashtags.join(',') : null;
+  },
 };
 
-// Export de la classe d'erreur pour utilisation externe
 export { InstagramAPIError };
