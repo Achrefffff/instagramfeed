@@ -13,9 +13,7 @@ database.sqlite
 .env
 .env.*
 
-
-
-
+.amazonq
 
 /extensions/*/dist
 
