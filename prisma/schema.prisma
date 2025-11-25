@@ -42,6 +42,7 @@ model InstagramPost {
   id            String   @id
   shop          String
   username      String
+  ownerUsername String?
   isTagged      Boolean  @default(false)
   mediaUrl      String
   permalink     String

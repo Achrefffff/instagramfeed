@@ -6,6 +6,45 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
   const [selectedAccount, setSelectedAccount] = useState('all');
   const [likesRange, setLikesRange] = useState('all');
   const [postType, setPostType] = useState('all');
+  const [selectedPosts, setSelectedPosts] = useState(new Set());
+  const [isSaving, setIsSaving] = useState(false);
+
+  const togglePostSelection = (postId) => {
+    setSelectedPosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
+  const saveSelection = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/instagram/save-selection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selectedPostIds: Array.from(selectedPosts) }),
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert(`✅ ${result.postsCount} posts sauvegardés avec succès !`);
+      } else {
+        console.error('Erreur serveur:', result);
+        alert(`❌ Erreur: ${result.error || 'Erreur inconnue'}`);
+      }
+    } catch (error) {
+      console.error('Erreur réseau:', error);
+      alert('❌ Erreur réseau: ' + error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
   
   const filteredPosts = posts
     .filter(post => selectedAccount === 'all' || post.accountUsername === selectedAccount)
@@ -186,6 +225,26 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
           </div>
           
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {selectedPosts.size > 0 && (
+              <button 
+                onClick={saveSelection}
+                disabled={isSaving}
+                style={{ 
+                  padding: '8px 16px', 
+                  backgroundColor: '#005bd3', 
+                  border: 'none', 
+                  borderRadius: '6px', 
+                  cursor: isSaving ? 'not-allowed' : 'pointer', 
+                  fontSize: '14px', 
+                  fontWeight: '500', 
+                  color: '#fff',
+                  opacity: isSaving ? 0.6 : 1
+                }}
+              >
+                {isSaving ? 'Sauvegarde...' : `💾 Sauvegarder (${selectedPosts.size})`}
+              </button>
+            )}
+            
             <button 
               onClick={() => {
                 const popup = window.open(
@@ -247,13 +306,19 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
           gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', 
           gap: '16px' 
         }}>
-          {filteredPosts.map((post) => (
+          {filteredPosts.map((post) => {
+            const isSelected = selectedPosts.has(post.id);
+            return (
             <div key={`${post.configId}-${post.id}`} style={{ 
-              border: '1px solid #e1e3e5', 
+              border: isSelected ? '2px solid #005bd3' : '1px solid #e1e3e5', 
               borderRadius: '8px', 
               overflow: 'hidden',
-              backgroundColor: '#fff'
-            }}>
+              backgroundColor: '#fff',
+              position: 'relative',
+              cursor: 'pointer'
+            }}
+            onClick={() => togglePostSelection(post.id)}
+            >
               {post.mediaType === 'IMAGE' || post.mediaType === 'CAROUSEL_ALBUM' ? (
                 <img 
                   src={post.mediaUrl} 
@@ -280,6 +345,25 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
               ) : null}
               
               <div style={{ padding: '12px' }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '4px',
+                  backgroundColor: isSelected ? '#005bd3' : '#fff',
+                  border: isSelected ? 'none' : '2px solid #c9cccf',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  zIndex: 10
+                }}>
+                  {isSelected && '✓'}
+                </div>
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
@@ -370,7 +454,8 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                 </a>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
         
         {filteredPosts.length === 0 && selectedAccount !== 'all' && (

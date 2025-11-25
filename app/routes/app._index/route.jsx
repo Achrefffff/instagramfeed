@@ -13,17 +13,22 @@ import {
 async function fetchInstagramPostsForAccount(config) {
   try {
     const pages = await instagram.getInstagramAccounts(config.accessToken);
-    const pageWithInstagram = pages.find(p => 
-      p.instagram_business_account && 
-      p.name === config.username
-    );
+    const pageWithInstagram = pages.find(p => p.instagram_business_account);
     
     if (!pageWithInstagram) {
-      console.warn(`No Instagram page found for username: ${config.username}`);
       return [];
     }
 
     const instagramId = pageWithInstagram.instagram_business_account.id;
+    
+    const actualUsername = await instagram.getInstagramUsername(instagramId, config.accessToken);
+    if (actualUsername && actualUsername !== config.username) {
+      await prisma.instagramConfig.update({
+        where: { id: config.id },
+        data: { username: actualUsername }
+      });
+      config.username = actualUsername;
+    }
     
     const [publishedPosts, taggedPosts] = await Promise.all([
       instagram.getInstagramPosts(instagramId, config.accessToken),
@@ -40,16 +45,16 @@ async function fetchInstagramPostsForAccount(config) {
         let insights = { impressions: null, reach: null, saved: null };
         try {
           insights = await instagram.getPostInsights(post.id, config.accessToken);
-        } catch (error) {
-          console.warn(`Could not fetch insights for post ${post.id}:`, error.message);
-        }
+        } catch (error) {}
 
         const hashtags = instagram.extractHashtags(post.caption);
+        const ownerUsername = post.username || config.username;
 
         return prisma.instagramPost.upsert({
           where: { id: post.id },
           update: {
             username: config.username,
+            ownerUsername,
             isTagged: post.isTagged,
             caption: post.caption || null,
             mediaUrl: post.media_url,
@@ -67,6 +72,7 @@ async function fetchInstagramPostsForAccount(config) {
             id: post.id,
             shop: config.shop,
             username: config.username,
+            ownerUsername,
             isTagged: post.isTagged,
             caption: post.caption || null,
             mediaUrl: post.media_url,
@@ -90,22 +96,13 @@ async function fetchInstagramPostsForAccount(config) {
       configId: config.id
     }));
   } catch (error) {
-    console.error(`Error fetching posts for account ${config.username}:`, {
-      error: error.message,
-      configId: config.id,
-      timestamp: new Date().toISOString()
-    });
-    
     if (error.message.includes('token') || error.message.includes('auth')) {
       try {
         await prisma.instagramConfig.update({
           where: { id: config.id },
           data: { isActive: false }
         });
-        console.info(`Deactivated invalid Instagram config: ${config.id}`);
-      } catch (dbError) {
-        console.error('Failed to deactivate invalid config:', dbError);
-      }
+      } catch (dbError) {}
     }
     
     return [];
@@ -184,12 +181,6 @@ export const loader = async ({ request }) => {
     };
     
   } catch (error) {
-    console.error('Loader error:', {
-      error: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString()
-    });
-    
     return {
       shop: 'unknown',
       isConfigured: false,
@@ -300,12 +291,6 @@ export const action = async ({ request }) => {
         return data({ error: "Action non reconnue" }, { status: 400 });
     }
   } catch (error) {
-    console.error('Action error:', {
-      error: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString()
-    });
-    
     return data(
       { error: "Une erreur est survenue lors de la déconnexion" }, 
       { status: 500 }

@@ -55,11 +55,6 @@ async function fetchWithErrorHandling(url, options = {}) {
 }
 
 export const instagram = {
-  /**
-   * Génère l'URL d'autorisation OAuth pour Instagram
-   * @param {string} state - État de sécurité pour la requête OAuth
-   * @returns {string} URL d'autorisation complète
-   */
   getAuthUrl(state) {
     if (!state) {
       throw new Error('State parameter is required for OAuth');
@@ -76,11 +71,6 @@ export const instagram = {
     return `https://www.facebook.com/${FACEBOOK_API_VERSION}/dialog/oauth?${params.toString()}`;
   },
 
-  /**
-   * Échange le code d'autorisation contre un access token
-   * @param {string} code - Code d'autorisation OAuth
-   * @returns {Promise<Object>} Token data avec access_token
-   */
   async exchangeCodeForToken(code) {
     if (!code) {
       throw new Error('Authorization code is required');
@@ -104,11 +94,6 @@ export const instagram = {
     return this.getLongLivedToken(data.access_token);
   },
 
-  /**
-   * Obtient un long-lived token (valide 60 jours)
-   * @param {string} shortLivedToken - Token de courte durée
-   * @returns {Promise<Object>} Token data avec access_token long-lived
-   */
   async getLongLivedToken(shortLivedToken) {
     if (!shortLivedToken) {
       throw new Error('Short-lived token is required');
@@ -126,11 +111,6 @@ export const instagram = {
     );
   },
 
-  /**
-   * Récupère les pages Facebook liées avec Instagram Business Account
-   * @param {string} accessToken - Token d'accès Facebook
-   * @returns {Promise<Array>} Liste des pages avec comptes Instagram
-   */
   async getInstagramAccounts(accessToken) {
     if (!accessToken) {
       throw new Error('Access token is required');
@@ -143,12 +123,6 @@ export const instagram = {
     return data.data || [];
   },
 
-  /**
-   * Récupère l'ID du compte Instagram Business pour une page
-   * @param {string} pageId - ID de la page Facebook
-   * @param {string} accessToken - Token d'accès
-   * @returns {Promise<string|undefined>} ID du compte Instagram Business
-   */
   async getInstagramBusinessAccount(pageId, accessToken) {
     if (!pageId || !accessToken) {
       throw new Error('Page ID and access token are required');
@@ -160,12 +134,20 @@ export const instagram = {
     return data.instagram_business_account?.id;
   },
 
-  /**
-   * Récupère les posts Instagram avec statistiques
-   * @param {string} instagramAccountId - ID du compte Instagram Business
-   * @param {string} accessToken - Token d'accès
-   * @returns {Promise<Array>} Liste des posts avec métadonnées
-   */
+  async getInstagramUsername(instagramAccountId, accessToken) {
+    if (!instagramAccountId || !accessToken) {
+      throw new Error('Instagram account ID and access token are required');
+    }
+
+    try {
+      const url = `${FACEBOOK_GRAPH_URL}/${instagramAccountId}?fields=username&access_token=${accessToken}`;
+      const data = await fetchWithErrorHandling(url);
+      return data.username || null;
+    } catch (error) {
+      return null;
+    }
+  },
+
   async getInstagramPosts(instagramAccountId, accessToken) {
     if (!instagramAccountId || !accessToken) {
       throw new Error('Instagram account ID and access token are required');
@@ -188,12 +170,6 @@ export const instagram = {
     return data.data || [];
   },
 
-  /**
-   * Récupère les commentaires d'un post spécifique
-   * @param {string} mediaId - ID du post Instagram
-   * @param {string} accessToken - Token d'accès
-   * @returns {Promise<Array>} Liste des commentaires
-   */
   async getPostComments(mediaId, accessToken) {
     if (!mediaId || !accessToken) {
       throw new Error('Media ID and access token are required');
@@ -206,18 +182,12 @@ export const instagram = {
     return data.data || [];
   },
 
-  /**
-   * Récupère les insights (statistiques avancées) d'un post
-   * @param {string} mediaId - ID du post Instagram
-   * @param {string} accessToken - Token d'accès
-   * @returns {Promise<Object>} Insights du post (impressions, reach, saved)
-   */
   async getPostInsights(mediaId, accessToken) {
     if (!mediaId || !accessToken) {
       throw new Error('Media ID and access token are required');
     }
 
-    const metrics = 'impressions,reach,saved';
+    const metrics = 'reach,saved';
     const url = `${FACEBOOK_GRAPH_URL}/${mediaId}/insights?metric=${metrics}&access_token=${accessToken}`;
     
     try {
@@ -231,12 +201,11 @@ export const instagram = {
       }
       
       return {
-        impressions: insights.impressions || 0,
+        impressions: null,
         reach: insights.reach || 0,
         saved: insights.saved || 0,
       };
     } catch (error) {
-      console.warn(`Insights not available for media ${mediaId}:`, error.message);
       return {
         impressions: null,
         reach: null,
@@ -245,12 +214,6 @@ export const instagram = {
     }
   },
 
-  /**
-   * Récupère les posts où le compte Instagram est tagué
-   * @param {string} instagramAccountId - ID du compte Instagram Business
-   * @param {string} accessToken - Token d'accès
-   * @returns {Promise<Array>} Liste des posts où le compte est tagué
-   */
   async getTaggedPosts(instagramAccountId, accessToken) {
     if (!instagramAccountId || !accessToken) {
       throw new Error('Instagram account ID and access token are required');
@@ -265,6 +228,7 @@ export const instagram = {
       'timestamp',
       'like_count',
       'comments_count',
+      'username',
     ].join(',');
 
     const url = `${FACEBOOK_GRAPH_URL}/${instagramAccountId}/tags?fields=${fields}&access_token=${accessToken}`;
@@ -273,16 +237,24 @@ export const instagram = {
       const data = await fetchWithErrorHandling(url);
       return data.data || [];
     } catch (error) {
-      console.warn(`Tagged posts not available for account ${instagramAccountId}:`, error.message);
       return [];
     }
   },
 
-  /**
-   * Extrait les hashtags d'une caption
-   * @param {string} caption - Texte de la légende du post
-   * @returns {string|null} Hashtags séparés par des virgules
-   */
+  async getMediaOwnerUsername(mediaId, accessToken) {
+    if (!mediaId || !accessToken) {
+      throw new Error('Media ID and access token are required');
+    }
+
+    try {
+      const url = `${FACEBOOK_GRAPH_URL}/${mediaId}?fields=username&access_token=${accessToken}`;
+      const data = await fetchWithErrorHandling(url);
+      return data.username || null;
+    } catch (error) {
+      return null;
+    }
+  },
+
   extractHashtags(caption) {
     if (!caption) return null;
     
@@ -291,6 +263,8 @@ export const instagram = {
     
     return hashtags ? hashtags.join(',') : null;
   },
+
+
 };
 
 export { InstagramAPIError };

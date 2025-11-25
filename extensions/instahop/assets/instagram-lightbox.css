@@ -1,0 +1,358 @@
+.instagram-post {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  position: relative;
+}
+
+.instagram-post:hover {
+  transform: translateY(-2px);
+}
+
+.instagram-post::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.instagram-post:hover::before {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.instagram-post .post-stats {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  padding: 12px;
+  color: white !important;
+  z-index: 2;
+}
+
+.instagram-post:hover .post-stats {
+  opacity: 1;
+}
+
+.instagram-carousel-wrapper {
+  position: relative;
+}
+
+.carousel-container {
+  padding: 0 60px;
+}
+
+.instagram-carousel {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  max-width: calc(100vw - 120px);
+}
+
+.carousel-post {
+  width: 300px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.carousel-img {
+  width: 300px;
+  height: 300px;
+  object-fit: cover;
+  display: block;
+}
+
+.instagram-feed {
+  display: grid;
+}
+
+.grid-post {
+  position: relative;
+  overflow: hidden;
+}
+
+.grid-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.post-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  z-index: 100;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carousel-prev {
+  left: 70px;
+}
+
+.carousel-next {
+  right: 10px;
+}
+
+#instagram-lightbox {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 99999;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px 20px 20px;
+}
+
+#instagram-lightbox[style*="display: block"] {
+  display: flex !important;
+}
+
+.lightbox-close {
+  background: transparent;
+  border: none;
+  color: #262626;
+  font-size: 32px;
+  cursor: pointer;
+  line-height: 1;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.lightbox-close:hover {
+  color: #8e8e8e;
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 30px;
+  cursor: pointer;
+  padding: 10px 15px;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+
+.lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.lightbox-nav-prev {
+  left: 20px;
+}
+
+.lightbox-nav-next {
+  right: 20px;
+}
+
+.lightbox-content {
+  max-width: 900px;
+  width: 70vw;
+  height: 70vh;
+  margin: 0 auto;
+  display: flex;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.lightbox-image-container {
+  flex: 1;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.lightbox-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lightbox-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+.lightbox-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #dbdbdb;
+  justify-content: space-between;
+}
+
+.instagram-logo {
+  width: 32px;
+  height: 32px;
+}
+
+.lightbox-username {
+  font-weight: 600;
+  font-size: 14px;
+  color: #262626;
+}
+
+.lightbox-body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.lightbox-caption {
+  line-height: 1.5;
+  font-size: 14px;
+  color: #262626;
+  margin: 0 0 12px 0;
+  word-wrap: break-word;
+}
+
+.lightbox-hashtags {
+  color: #00376b;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.lightbox-footer {
+  border-top: 1px solid #dbdbdb;
+  padding: 16px;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.lightbox-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: #262626;
+  font-weight: 600;
+}
+
+.lightbox-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: transparent;
+  color: #0095f6;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+
+.lightbox-link:hover {
+  background: #f0f0f0;
+}
+
+.link-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.instagram-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-btn {
+  transition: all 0.3s ease;
+}
+
+.carousel-btn:hover {
+  background: #f0f0f0;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 1024px) {
+  .lightbox-content {
+    width: 98vw;
+    height: 95vh;
+  }
+  
+  .lightbox-info {
+    width: 350px;
+    min-width: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .lightbox-content {
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+  
+  .lightbox-image-container {
+    flex: 1;
+    max-height: 60vh;
+  }
+  
+  .lightbox-info {
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+    flex: 1;
+  }
+  
+  .lightbox-nav {
+    font-size: 24px;
+    padding: 8px 12px;
+  }
+  
+  .lightbox-close {
+    background: rgba(255, 255, 255, 0.9);
+    color: #000;
+  }
+}

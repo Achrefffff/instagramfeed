@@ -52,7 +52,13 @@ export const loader = async ({ request }) => {
       throw new Response("No Instagram Business account found. Please connect your Instagram account to a Facebook page.", { status: 404 });
     }
 
-    const username = pageWithInstagram.name.trim();
+    const instagramAccountId = pageWithInstagram.instagram_business_account.id;
+    const username = await instagram.getInstagramUsername(instagramAccountId, accessToken);
+    
+    if (!username) {
+      throw new Response("Could not retrieve Instagram username", { status: 500 });
+    }
+    
     if (username.length > 255) {
       throw new Response("Instagram username too long", { status: 400 });
     }

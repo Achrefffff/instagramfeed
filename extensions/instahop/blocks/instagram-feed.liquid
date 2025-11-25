@@ -1,0 +1,200 @@
+{% comment %}theme-check-disable RemoteAsset{% endcomment %}
+{% assign instagram_data = shop.metafields.custom.instagram_selected_posts.value %}
+
+{% if instagram_data and instagram_data.posts %}
+  {% if block.settings.layout == 'carousel' %}
+    <div class="instagram-carousel-wrapper" style="padding: {{ block.settings.padding }}px;">
+      <button class="carousel-btn carousel-prev" onclick="window.scrollCarousel(-1)">&lt;</button>
+      
+      <div class="carousel-container">
+        <div class="instagram-carousel" style="gap: {{ block.settings.gap }}px;">
+        {% for post in instagram_data.posts limit: block.settings.max_posts %}
+          <div class="instagram-post carousel-post" style="border-radius: {{ block.settings.border_radius }}px;" onclick="openLightbox({{ forloop.index0 }})">
+            <img 
+              src="{{ post.mediaUrl }}" 
+              alt="{{ post.caption | truncate: 100 }}" 
+              width="300"
+              height="300"
+              loading="lazy"
+              class="carousel-img"
+            >
+            {% if block.settings.show_stats %}
+              <div class="post-stats" style="color: {{ block.settings.text_color }};">
+                <span>❤️ {{ post.likeCount }}</span>
+                <span>💬 {{ post.commentsCount }}</span>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+        </div>
+      </div>
+      
+      <button class="carousel-btn carousel-next" onclick="window.scrollCarousel(1)">&gt;</button>
+    </div>
+  {% else %}
+    <div class="instagram-feed" style="grid-template-columns: repeat({{ block.settings.columns }}, 1fr); gap: {{ block.settings.gap }}px; padding: {{ block.settings.padding }}px;">
+      {% for post in instagram_data.posts limit: block.settings.max_posts %}
+        <div class="instagram-post grid-post" style="border-radius: {{ block.settings.border_radius }}px;" onclick="openLightbox({{ forloop.index0 }})">
+          <img 
+            src="{{ post.mediaUrl }}" 
+            alt="{{ post.caption | truncate: 100 }}" 
+            width="400"
+            height="400"
+            loading="lazy"
+            class="grid-img"
+          >
+          {% if block.settings.show_stats %}
+            <div class="post-stats" style="color: {{ block.settings.text_color }};">
+              <span>❤️ {{ post.likeCount }}</span>
+              <span>💬 {{ post.commentsCount }}</span>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div id="instagram-lightbox">
+    <button class="lightbox-nav lightbox-nav-prev" onclick="navigatePost(-1)">&lt;</button>
+    <button class="lightbox-nav lightbox-nav-next" onclick="navigatePost(1)">&gt;</button>
+
+    <div class="lightbox-content">
+      <div class="lightbox-image-container">
+        <img id="lightbox-image" alt="Instagram post" width="800" height="800">
+      </div>
+      
+      <div class="lightbox-info">
+        <div class="lightbox-header">
+          <img src="{{ 'Instagram_Glyph_Gradient.png' | asset_url }}" alt="Instagram" class="instagram-logo" width="32" height="32">
+          <span id="lightbox-username" class="lightbox-username"></span>
+          <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+        </div>
+        <div class="lightbox-body">
+          <p id="lightbox-caption" class="lightbox-caption"></p>
+          <div id="lightbox-hashtags" class="lightbox-hashtags"></div>
+        </div>
+        <div class="lightbox-footer">
+          <div id="lightbox-stats" class="lightbox-stats"></div>
+          <a id="lightbox-link" href="" target="_blank" rel="noopener" class="lightbox-link">
+            <img src="{{ 'Instagram_Glyph_Gradient.png' | asset_url }}" alt="Instagram" class="link-icon" width="20" height="20">
+            Voir sur Instagram
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.scrollCarousel = function(direction) {
+      const carousel = document.querySelector('.instagram-carousel');
+      if (!carousel) return;
+      const cardWidth = carousel.querySelector('.instagram-post')?.offsetWidth || 300;
+      const gap = parseInt(getComputedStyle(carousel).gap) || 0;
+      carousel.scrollBy({
+        left: direction * (cardWidth + gap),
+        behavior: 'smooth'
+      });
+    };
+
+    (function() {
+      if (typeof window.initInstagramLightbox === 'function') {
+        window.initInstagramLightbox({{ instagram_data.posts | json }});
+      } else {
+        document.addEventListener('DOMContentLoaded', function() {
+          if (typeof window.initInstagramLightbox === 'function') {
+            window.initInstagramLightbox({{ instagram_data.posts | json }});
+          }
+        });
+      }
+    })();
+  </script>
+{% else %}
+  <div style="padding: 2rem; text-align: center; color: #666;">
+    <p>Aucun post Instagram sélectionné. Configurez vos posts dans l'admin de l'app.</p>
+  </div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Instagram Feed",
+  "target": "section",
+  "stylesheet": "instagram-lightbox.css",
+  "javascript": "instagram-lightbox.js",
+  "settings": [
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Type d'affichage",
+      "options": [
+        {
+          "value": "grid",
+          "label": "Grille"
+        },
+        {
+          "value": "carousel",
+          "label": "Carrousel"
+        }
+      ],
+      "default": "grid"
+    },
+    {
+      "type": "range",
+      "id": "columns",
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "default": 3,
+      "label": "Colonnes (Grille uniquement)"
+    },
+    {
+      "type": "range",
+      "id": "max_posts",
+      "min": 3,
+      "max": 50,
+      "step": 1,
+      "default": 9,
+      "label": "Nombre maximum de posts"
+    },
+    {
+      "type": "range",
+      "id": "gap",
+      "min": 0,
+      "max": 50,
+      "step": 5,
+      "default": 15,
+      "label": "Espacement (px)"
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "min": 0,
+      "max": 100,
+      "step": 10,
+      "default": 20,
+      "label": "Padding (px)"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "min": 0,
+      "max": 30,
+      "step": 2,
+      "default": 8,
+      "label": "Arrondi des coins (px)"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_stats",
+      "default": true,
+      "label": "Afficher les statistiques"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "default": "#333333",
+      "label": "Couleur du texte"
+    }
+  ]
+}
+{% endschema %}
+
