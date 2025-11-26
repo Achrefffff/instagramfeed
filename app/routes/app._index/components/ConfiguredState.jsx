@@ -1,13 +1,16 @@
 import { Form, useNavigate } from "react-router";
 import { useState } from "react";
+import { useToast } from "../../../hooks/useToast";
+import { StatsOverview } from "./StatsOverview";
+import { Toast } from "./Toast";
 
 export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], shop }) {
   const navigate = useNavigate();
   const [selectedAccount, setSelectedAccount] = useState('all');
-  const [likesRange, setLikesRange] = useState('all');
   const [postType, setPostType] = useState('all');
   const [selectedPosts, setSelectedPosts] = useState(new Set());
   const [isSaving, setIsSaving] = useState(false);
+  const { toast, showToast, dismissToast } = useToast();
 
   const togglePostSelection = (postId) => {
     setSelectedPosts(prev => {
@@ -33,14 +36,12 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
       const result = await response.json();
       
       if (response.ok) {
-        alert(`✅ ${result.postsCount} posts sauvegardés avec succès !`);
+        showToast(`${result.postsCount} posts sauvegardés avec succès !`);
       } else {
-        console.error('Erreur serveur:', result);
-        alert(`❌ Erreur: ${result.error || 'Erreur inconnue'}`);
+        showToast(result.error || 'Erreur inconnue', true);
       }
     } catch (error) {
-      console.error('Erreur réseau:', error);
-      alert('❌ Erreur réseau: ' + error.message);
+      showToast('Erreur réseau: ' + error.message, true);
     } finally {
       setIsSaving(false);
     }
@@ -52,15 +53,6 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
       if (postType === 'all') return true;
       if (postType === 'published') return !post.isTagged;
       if (postType === 'tagged') return post.isTagged;
-      return true;
-    })
-    .filter(post => {
-      if (likesRange === 'all') return true;
-      if (likesRange === '0-50') return post.likeCount < 50;
-      if (likesRange === '50-100') return post.likeCount >= 50 && post.likeCount < 100;
-      if (likesRange === '100-500') return post.likeCount >= 100 && post.likeCount < 500;
-      if (likesRange === '500-1000') return post.likeCount >= 500 && post.likeCount < 1000;
-      if (likesRange === '1000+') return post.likeCount >= 1000;
       return true;
     });
 
@@ -118,8 +110,13 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
   }
 
   return (
-    <s-section heading="Vos posts Instagram">
-      <s-stack direction="block" gap="base">
+    <>
+      <Toast message={toast?.message} isError={toast?.isError} onDismiss={dismissToast} />
+      
+      <StatsOverview posts={posts} accountsCount={accountsCount} />
+      
+      <s-section heading="Vos posts Instagram">
+        <s-stack direction="block" gap="base">
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -188,40 +185,28 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
               </select>
             )}
             
-            <select 
-              value={postType}
-              onChange={(e) => setPostType(e.target.value)}
-              style={{
-                padding: '6px 12px',
-                border: '1px solid #c9cccf',
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: '#fff'
-              }}
-            >
-              <option value="all">Tous les posts</option>
-              <option value="published">Posts publiés</option>
-              <option value="tagged">Posts tagués</option>
-            </select>
-            
-            <select 
-              value={likesRange}
-              onChange={(e) => setLikesRange(e.target.value)}
-              style={{
-                padding: '6px 12px',
-                border: '1px solid #c9cccf',
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: '#fff'
-              }}
-            >
-              <option value="all">Tous les likes</option>
-              <option value="0-50">0 - 50 likes</option>
-              <option value="50-100">50 - 100 likes</option>
-              <option value="100-500">100 - 500 likes</option>
-              <option value="500-1000">500 - 1000 likes</option>
-              <option value="1000+">1000+ likes</option>
-            </select>
+            <div style={{ display: 'flex', gap: '4px', backgroundColor: '#f6f6f7', padding: '4px', borderRadius: '8px' }}>
+              {['all', 'published', 'tagged'].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setPostType(type)}
+                  style={{
+                    padding: '6px 12px',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    backgroundColor: postType === type ? '#fff' : 'transparent',
+                    color: postType === type ? '#202223' : '#6d7175',
+                    boxShadow: postType === type ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {type === 'all' ? 'Tous' : type === 'published' ? 'Publiés' : 'Tagués'}
+                </button>
+              ))}
+            </div>
           </div>
           
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -370,9 +355,23 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                   alignItems: 'center',
                   marginBottom: '8px'
                 }}>
-                  <s-text variant="bodySm" style={{ color: '#6d7175', fontWeight: '500' }}>
-                    @{post.accountUsername}
-                  </s-text>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <s-text variant="bodySm" style={{ color: '#6d7175', fontWeight: '500' }}>
+                      @{post.ownerUsername || post.accountUsername}
+                    </s-text>
+                    {post.isTagged && (
+                      <span style={{
+                        fontSize: '10px',
+                        padding: '2px 6px',
+                        backgroundColor: '#e3f2fd',
+                        color: '#1976d2',
+                        borderRadius: '4px',
+                        fontWeight: '600'
+                      }}>
+                        TAGUÉ
+                      </span>
+                    )}
+                  </div>
                   <s-text variant="bodySm" style={{ color: '#8c9196' }}>
                     {new Date(post.timestamp).toLocaleDateString('fr-FR')}
                   </s-text>
@@ -405,7 +404,8 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                   {post.impressions > 0 && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style={{ width: '14px', height: '14px' }}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5m.75-9 3-3 2.148 2.148A12.061 12.061 0 0 1 16.5 7.605" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
                       </svg>
                       {post.impressions.toLocaleString()}
                     </span>
@@ -413,8 +413,7 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                   {post.reach > 0 && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style={{ width: '14px', height: '14px' }}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                       </svg>
                       {post.reach.toLocaleString()}
                     </span>
@@ -479,7 +478,8 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
             Aucun post trouvé pour @{selectedAccount}
           </s-text>
         )}
-      </s-stack>
-    </s-section>
+        </s-stack>
+      </s-section>
+    </>
   );
 }
