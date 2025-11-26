@@ -257,10 +257,15 @@ export const instagram = {
   },
 
   extractHashtags(caption) {
-    if (!caption) return null;
+    console.log('Caption reçu:', caption);
+    if (!caption) {
+      console.log('Caption vide ou null');
+      return null;
+    }
     
     const hashtagRegex = /#[\wÀ-ſ]+/g;
     const hashtags = caption.match(hashtagRegex);
+    console.log('Hashtags extraits:', hashtags);
     
     return hashtags ? hashtags.join(',') : null;
   },
