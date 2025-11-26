@@ -158,6 +158,7 @@ export const instagram = {
       'caption',
       'media_type',
       'media_url',
+      'thumbnail_url',
       'permalink',
       'timestamp',
       'like_count',
@@ -264,6 +265,20 @@ export const instagram = {
     return hashtags ? hashtags.join(',') : null;
   },
 
+  async getCarouselChildren(mediaId, accessToken) {
+    if (!mediaId || !accessToken) {
+      throw new Error('Media ID and access token are required');
+    }
+
+    try {
+      const fields = 'id,media_type,media_url';
+      const url = `${FACEBOOK_GRAPH_URL}/${mediaId}/children?fields=${fields}&access_token=${accessToken}`;
+      const data = await fetchWithErrorHandling(url);
+      return data.data || [];
+    } catch (error) {
+      return [];
+    }
+  },
 
 };
 

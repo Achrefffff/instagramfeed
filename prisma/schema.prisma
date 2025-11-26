@@ -39,24 +39,26 @@ model InstagramConfig {
 }
 
 model InstagramPost {
-  id            String   @id
-  shop          String
-  username      String
-  ownerUsername String?
-  isTagged      Boolean  @default(false)
-  mediaUrl      String
-  permalink     String
-  caption       String?
-  timestamp     DateTime
-  mediaType     String
-  likeCount     Int      @default(0)
-  commentsCount Int      @default(0)
-  impressions   Int?
-  reach         Int?
-  saved         Int?
-  hashtags      String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+  id             String   @id
+  shop           String
+  username       String
+  ownerUsername  String?
+  isTagged       Boolean  @default(false)
+  mediaUrl       String
+  thumbnailUrl   String?
+  carouselImages String?
+  permalink      String
+  caption        String?
+  timestamp      DateTime
+  mediaType      String
+  likeCount      Int      @default(0)
+  commentsCount  Int      @default(0)
+  impressions    Int?
+  reach          Int?
+  saved          Int?
+  hashtags       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
 
   @@index([shop, username])
   @@index([shop, timestamp])

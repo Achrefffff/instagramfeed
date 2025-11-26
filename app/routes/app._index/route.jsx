@@ -50,6 +50,19 @@ async function fetchInstagramPostsForAccount(config) {
         const hashtags = instagram.extractHashtags(post.caption);
         const ownerUsername = post.username || config.username;
 
+        let carouselImages = null;
+        if (post.media_type === 'CAROUSEL_ALBUM') {
+          try {
+            const children = await instagram.getCarouselChildren(post.id, config.accessToken);
+            if (children.length > 0) {
+              carouselImages = JSON.stringify(children.map(child => ({
+                url: child.media_url,
+                type: child.media_type
+              })));
+            }
+          } catch (error) {}
+        }
+
         return prisma.instagramPost.upsert({
           where: { id: post.id },
           update: {
@@ -58,6 +71,8 @@ async function fetchInstagramPostsForAccount(config) {
             isTagged: post.isTagged,
             caption: post.caption || null,
             mediaUrl: post.media_url,
+            thumbnailUrl: post.thumbnail_url || null,
+            carouselImages,
             permalink: post.permalink,
             timestamp: new Date(post.timestamp),
             mediaType: post.media_type,
@@ -76,6 +91,8 @@ async function fetchInstagramPostsForAccount(config) {
             isTagged: post.isTagged,
             caption: post.caption || null,
             mediaUrl: post.media_url,
+            thumbnailUrl: post.thumbnail_url || null,
+            carouselImages,
             permalink: post.permalink,
             timestamp: new Date(post.timestamp),
             mediaType: post.media_type,
