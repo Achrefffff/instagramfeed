@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "Instagram Feed",
+    "connect": "Connect Instagram",
+    "addAccount": "Add account",
+    "disconnect": "Disconnect",
+    "disconnectAll": "Disconnect all",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "stats": {
+    "posts": "Posts",
+    "accounts": "Accounts",
+    "likes": "Likes",
+    "comments": "Comments",
+    "reach": "Reach"
+  },
+  "filters": {
+    "all": "All",
+    "published": "Published",
+    "tagged": "Tagged",
+    "allAccounts": "All accounts",
+    "filterByAccount": "Filter by Instagram account"
+  },
+  "messages": {
+    "noPostsFound": "No Instagram posts found. Publish content on Instagram to see it here.",
+    "noAccountConnected": "No Instagram account connected.",
+    "connectedAccounts": "Connected accounts:",
+    "saveSuccess": "{{count}} posts saved successfully!",
+    "tooManyAttempts": "Too many attempts, please try again in 1 hour",
+    "tooManySaves": "Too many saves, please wait a few minutes",
+    "tooManyDisconnects": "Too many disconnections, please wait",
+    "networkError": "Network error: {{message}}",
+    "noPostsForAccount": "No posts found for @{{username}}"
+  },
+  "empty": {
+    "title": "How does it work?",
+    "step1Title": "1. Connect Instagram",
+    "step1Desc": "Link your Instagram Business account in one click",
+    "step2Title": "2. Select your posts",
+    "step2Desc": "Choose the posts to display on your store",
+    "step3Title": "3. Publish on your site",
+    "step3Desc": "Add the Instagram Feed block to your theme",
+    "info": "Transform your Instagram posts into engaging content for your store. Automatic synchronization and customizable display.",
+    "warning": "You will need an Instagram Business account connected to a Facebook page to use this application."
+  },
+  "post": {
+    "tagged": "TAGGED",
+    "noCaption": "No caption",
+    "viewOnInstagram": "View on Instagram →"
+  },
+  "aria": {
+    "filterPosts": "Filter posts: {{type}}",
+    "disconnectAccount": "Disconnect account @{{username}}",
+    "postCheckbox": "Instagram post from @{{username}} - {{caption}}",
+    "postImage": "Instagram post: {{caption}}",
+    "postVideo": "Instagram video from @{{username}}",
+    "viewPost": "View post from @{{username}} on Instagram (opens in new tab)",
+    "connectButton": "Connect your Instagram Business account",
+    "stat": "{{label}}: {{value}}"
+  }
+}

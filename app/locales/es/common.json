@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "Feed de Instagram",
+    "connect": "Conectar Instagram",
+    "addAccount": "Añadir cuenta",
+    "disconnect": "Desconectar",
+    "disconnectAll": "Desconectar todo",
+    "save": "Guardar",
+    "saving": "Guardando..."
+  },
+  "stats": {
+    "posts": "Publicaciones",
+    "accounts": "Cuentas",
+    "likes": "Me gusta",
+    "comments": "Comentarios",
+    "reach": "Alcance"
+  },
+  "filters": {
+    "all": "Todos",
+    "published": "Publicados",
+    "tagged": "Etiquetados",
+    "allAccounts": "Todas las cuentas",
+    "filterByAccount": "Filtrar por cuenta de Instagram"
+  },
+  "messages": {
+    "noPostsFound": "No se encontraron publicaciones de Instagram. Publica contenido en Instagram para verlo aquí.",
+    "noAccountConnected": "No hay cuenta de Instagram conectada.",
+    "connectedAccounts": "Cuentas conectadas:",
+    "saveSuccess": "¡{{count}} publicaciones guardadas con éxito!",
+    "tooManyAttempts": "Demasiados intentos, inténtelo de nuevo en 1 hora",
+    "tooManySaves": "Demasiadas guardadas, espere unos minutos",
+    "tooManyDisconnects": "Demasiadas desconexiones, por favor espere",
+    "networkError": "Error de red: {{message}}",
+    "noPostsForAccount": "No se encontraron publicaciones para @{{username}}"
+  },
+  "empty": {
+    "title": "¿Cómo funciona?",
+    "step1Title": "1. Conectar Instagram",
+    "step1Desc": "Vincula tu cuenta de Instagram Business con un clic",
+    "step2Title": "2. Selecciona tus publicaciones",
+    "step2Desc": "Elige las publicaciones para mostrar en tu tienda",
+    "step3Title": "3. Publica en tu sitio",
+    "step3Desc": "Añade el bloque de Feed de Instagram a tu tema",
+    "info": "Transforma tus publicaciones de Instagram en contenido atractivo para tu tienda. Sincronización automática y visualización personalizable.",
+    "warning": "Necesitarás una cuenta de Instagram Business conectada a una página de Facebook para usar esta aplicación."
+  },
+  "post": {
+    "tagged": "ETIQUETADO",
+    "noCaption": "Sin descripción",
+    "viewOnInstagram": "Ver en Instagram →"
+  },
+  "aria": {
+    "filterPosts": "Filtrar publicaciones: {{type}}",
+    "disconnectAccount": "Desconectar cuenta @{{username}}",
+    "postCheckbox": "Publicación de Instagram de @{{username}} - {{caption}}",
+    "postImage": "Publicación de Instagram: {{caption}}",
+    "postVideo": "Video de Instagram de @{{username}}",
+    "viewPost": "Ver publicación de @{{username}} en Instagram (abre en nueva pestaña)",
+    "connectButton": "Conecta tu cuenta de Instagram Business",
+    "stat": "{{label}}: {{value}}"
+  }
+}

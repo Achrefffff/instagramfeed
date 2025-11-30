@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 export function EmptyState({ shop }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const handleConnect = () => {
     const popup = window.open(
@@ -27,38 +29,38 @@ export function EmptyState({ shop }) {
     <s-stack direction="block" gap="large">
       <s-banner tone="info">
         <s-text variant="bodyMd">
-          Transformez vos posts Instagram en contenu engageant pour votre boutique. Synchronisation automatique et affichage personnalisable.
+          {t('empty.info')}
         </s-text>
       </s-banner>
 
       <s-section>
         <s-stack direction="block" gap="large">
-          <s-text variant="headingLg">Comment ça marche ?</s-text>
+          <s-text variant="headingLg">{t('empty.title')}</s-text>
           
           <s-inline-grid columns="3" gap="base">
             <s-card>
               <s-stack direction="block" gap="tight">
-                <s-text variant="headingSm">1. Connectez Instagram</s-text>
+                <s-text variant="headingSm">{t('empty.step1Title')}</s-text>
                 <s-text variant="bodySm" tone="subdued">
-                  Liez votre compte Instagram Business en un clic
+                  {t('empty.step1Desc')}
                 </s-text>
               </s-stack>
             </s-card>
 
             <s-card>
               <s-stack direction="block" gap="tight">
-                <s-text variant="headingSm">2. Sélectionnez vos posts</s-text>
+                <s-text variant="headingSm">{t('empty.step2Title')}</s-text>
                 <s-text variant="bodySm" tone="subdued">
-                  Choisissez les posts à afficher sur votre boutique
+                  {t('empty.step2Desc')}
                 </s-text>
               </s-stack>
             </s-card>
 
             <s-card>
               <s-stack direction="block" gap="tight">
-                <s-text variant="headingSm">3. Publiez sur votre site</s-text>
+                <s-text variant="headingSm">{t('empty.step3Title')}</s-text>
                 <s-text variant="bodySm" tone="subdued">
-                  Ajoutez le bloc Instagram Feed à votre thème
+                  {t('empty.step3Desc')}
                 </s-text>
               </s-stack>
             </s-card>
@@ -66,15 +68,15 @@ export function EmptyState({ shop }) {
 
           <s-banner tone="warning">
             <s-text variant="bodySm">
-              Vous aurez besoin d'un compte Instagram Business connecté à une page Facebook pour utiliser cette application.
+              {t('empty.warning')}
             </s-text>
           </s-banner>
 
           <div onClick={handleConnect}>
-            <s-button variant="primary">
+            <s-button variant="primary" aria-label={t('aria.connectButton')}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <img src="/instagram-logo.png" alt="Instagram" style={{ width: '16px', height: '16px' }} />
-                Connecter Instagram
+                <img src="/instagram-logo.png" alt="" role="presentation" style={{ width: '16px', height: '16px' }} />
+                {t('app.connect')}
               </div>
             </s-button>
           </div>

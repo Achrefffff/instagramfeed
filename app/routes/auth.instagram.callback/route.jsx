@@ -1,98 +1,192 @@
 import { redirect, data } from "react-router";
 import { instagram } from "../../services/instagram.server";
 import prisma from "../../db.server";
-import invariant from "tiny-invariant";
 import { boundary } from "@shopify/shopify-app-react-router/server";
+import {
+  instagramCallbackSchema,
+  validateData,
+  sanitizeString,
+} from "../../utils/validation.server";
+import {
+  handleError,
+  ValidationError,
+  InstagramAPIError,
+  DatabaseError,
+} from "../../utils/errors.server";
+import { logger } from "../../utils/logger.server";
 
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
-  const code = url.searchParams.get("code");
-  const state = url.searchParams.get("state");
-  const error = url.searchParams.get("error");
 
-  if (error) {
-    const errorDescription = url.searchParams.get("error_description") || "Instagram authorization failed";
-    console.error("OAuth error:", error, errorDescription);
-    throw redirect(`/app?error=instagram_auth_failed&message=${encodeURIComponent(errorDescription)}`);
+  const params = {
+    code: url.searchParams.get("code"),
+    state: url.searchParams.get("state"),
+    error: url.searchParams.get("error"),
+    error_description: url.searchParams.get("error_description"),
+  };
+
+  logger.info("Instagram callback received", null, {
+    params,
+    url: request.url,
+  });
+
+  if (params.error) {
+    const errorDescription = sanitizeString(
+      params.error_description || "Instagram authorization failed",
+    );
+    logger.error("Instagram OAuth error", null, {
+      error: params.error,
+      description: errorDescription,
+    });
+    throw redirect(
+      `/app?error=instagram_auth_failed&message=${encodeURIComponent(errorDescription)}`,
+    );
   }
 
-  invariant(code, "Missing authorization code parameter");
-  invariant(state, "Missing state parameter");
+  const validation = validateData(instagramCallbackSchema, params);
+  logger.info("Validation result", null, {
+    success: validation.success,
+    errors: validation.errors,
+    data: validation.data,
+  });
+
+  if (!validation.success) {
+    throw new ValidationError(validation.errors[0].message, validation.errors);
+  }
+
+  const { code, state } = validation.data;
 
   try {
     const [shop, timestamp] = state.split("-");
-    invariant(shop, "Invalid state parameter: missing shop");
-    invariant(timestamp, "Invalid state parameter: missing timestamp");
-    
+    if (!shop || !timestamp) {
+      throw new Response("Invalid state parameter", { status: 400 });
+    }
+
     const stateAge = Date.now() - parseInt(timestamp);
     if (stateAge > 5 * 60 * 1000) {
-      throw new Response("Authorization request expired. Please try again.", { status: 400 });
+      throw new Response("Authorization request expired. Please try again.", {
+        status: 400,
+      });
     }
 
-    const tokenData = await instagram.exchangeCodeForToken(code);
+    let tokenData;
+    try {
+      tokenData = await instagram.exchangeCodeForToken(code);
+    } catch (error) {
+      throw new InstagramAPIError(
+        "Échec de l'échange du code d'autorisation",
+        500,
+      );
+    }
+
     const { access_token: accessToken } = tokenData;
-    
+
     if (!accessToken) {
-      throw new Response("Failed to obtain access token from Instagram", { status: 500 });
+      throw new InstagramAPIError("Token d'accès Instagram non reçu", 500);
     }
 
-    const pages = await instagram.getInstagramAccounts(accessToken);
-    
+    let pages;
+    try {
+      pages = await instagram.getInstagramAccounts(accessToken);
+    } catch (error) {
+      throw new InstagramAPIError(
+        "Impossible de récupérer les pages Facebook",
+        500,
+      );
+    }
+
     if (!Array.isArray(pages) || pages.length === 0) {
-      throw new Response("No Facebook pages found. Please connect a Facebook page with an Instagram Business account.", { status: 404 });
+      logger.warn("No Facebook pages found", { shop });
+      throw new InstagramAPIError(
+        "Aucune page Facebook trouvée. Connectez une page avec un compte Instagram Business.",
+        404,
+      );
     }
 
-    const pageWithInstagram = pages.find(page => 
-      page.instagram_business_account && 
-      page.name && 
-      page.name.trim().length > 0
+    const pageWithInstagram = pages.find(
+      (page) =>
+        page.instagram_business_account &&
+        page.name &&
+        page.name.trim().length > 0,
     );
-    
+
     if (!pageWithInstagram) {
-      throw new Response("No Instagram Business account found. Please connect your Instagram account to a Facebook page.", { status: 404 });
+      logger.warn("No Instagram Business account found", {
+        shop,
+        pagesCount: pages.length,
+      });
+      throw new InstagramAPIError(
+        "Aucun compte Instagram Business trouvé. Connectez votre Instagram à une page Facebook.",
+        404,
+      );
     }
 
     const instagramAccountId = pageWithInstagram.instagram_business_account.id;
-    const username = await instagram.getInstagramUsername(instagramAccountId, accessToken);
-    
-    if (!username) {
-      throw new Response("Could not retrieve Instagram username", { status: 500 });
+    let username;
+    try {
+      username = await instagram.getInstagramUsername(
+        instagramAccountId,
+        accessToken,
+      );
+    } catch (error) {
+      throw new InstagramAPIError(
+        "Impossible de récupérer le nom d'utilisateur Instagram",
+        500,
+      );
     }
-    
-    if (username.length > 255) {
+
+    if (!username || typeof username !== "string") {
+      throw new InstagramAPIError("Nom d'utilisateur Instagram invalide", 500);
+    }
+
+    const sanitizedUsername = sanitizeString(username);
+    if (sanitizedUsername.length > 255) {
       throw new Response("Instagram username too long", { status: 400 });
     }
 
-    console.log("Attempting to save:", { shop, username, accessToken: accessToken ? 'present' : 'missing' });
-    
+    logger.info("Saving Instagram configuration", {
+      shop,
+      username: sanitizedUsername,
+    });
+
+    // Calculer la date d'expiration du token (~60 jours)
+    const expiresIn = tokenData.expires_in || 5184000; // Par défaut ~60 jours
+    const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
+
     try {
       const result = await prisma.instagramConfig.upsert({
-        where: { 
+        where: {
           shop_username: {
             shop,
-            username
-          }
+            username: sanitizedUsername,
+          },
         },
         update: {
           accessToken,
           isActive: true,
+          tokenExpiresAt,
+          lastRefreshedAt: new Date(),
         },
         create: {
           shop,
           accessToken,
-          username,
+          username: sanitizedUsername,
           isActive: true,
+          tokenExpiresAt,
+          lastRefreshedAt: new Date(),
         },
       });
-      console.log("Save successful:", result.id);
-    } catch (prismaError) {
-      console.error("Database error details:", {
-        message: prismaError.message,
-        code: prismaError.code,
-        meta: prismaError.meta,
-        stack: prismaError.stack
+      logger.info("Instagram configuration saved successfully", {
+        shop,
+        username: sanitizedUsername,
+        configId: result.id,
+        tokenExpiresAt: tokenExpiresAt.toISOString(),
       });
-      throw new Response(`Failed to save Instagram configuration: ${prismaError.message}`, { status: 500 });
+    } catch (prismaError) {
+      throw new DatabaseError(
+        "Échec de la sauvegarde de la configuration Instagram",
+        prismaError,
+      );
     }
 
     return new Response(
@@ -121,26 +215,18 @@ export const loader = async ({ request }) => {
           </script>
         </body>
       </html>`,
-      { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+      { headers: { "Content-Type": "text/html; charset=utf-8" } },
     );
-    
   } catch (error) {
     if (error instanceof Response) {
       throw error;
     }
-    
-    console.error("Instagram OAuth error:", {
-      message: error.message,
-      stack: error.stack,
-      code,
-      state,
-      timestamp: new Date().toISOString()
+
+    return handleError(error, {
+      action: "instagram-callback",
+      code: code?.substring(0, 10),
+      state: state?.substring(0, 20),
     });
-    
-    throw new Response(
-      `Instagram connection failed: ${error.message || 'Unknown error'}`, 
-      { status: 500 }
-    );
   }
 };
 

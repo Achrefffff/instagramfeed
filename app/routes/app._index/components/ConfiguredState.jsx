@@ -3,15 +3,22 @@ import { useState } from "react";
 import { useToast } from "../../../hooks/useToast";
 import { StatsOverview } from "./StatsOverview";
 import { Toast } from "./Toast";
+import { useTranslation } from "react-i18next";
 
 export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], shop }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [selectedAccount, setSelectedAccount] = useState('all');
   const [postType, setPostType] = useState('all');
   const [selectedPosts, setSelectedPosts] = useState(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const { toast, showToast, dismissToast } = useToast();
-
+  const Stat = ({ label, value }) => (
+  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+    <span>{label}</span>
+    <strong>{value}</strong>
+  </span>
+);
   const togglePostSelection = (postId) => {
     setSelectedPosts(prev => {
       const newSet = new Set(prev);
@@ -36,12 +43,12 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
       const result = await response.json();
       
       if (response.ok) {
-        showToast(`${result.postsCount} posts sauvegardés avec succès !`);
+        showToast(t('messages.saveSuccess', { count: result.postsCount }));
       } else {
-        showToast(result.error || 'Erreur inconnue', true);
+        showToast(result.error || t('messages.networkError', { message: 'Unknown' }), true);
       }
     } catch (error) {
-      showToast('Erreur réseau: ' + error.message, true);
+      showToast(t('messages.networkError', { message: error.message }), true);
     } finally {
       setIsSaving(false);
     }
@@ -62,14 +69,14 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
         <s-stack direction="block" gap="base">
           <s-paragraph>
             {accountsCount > 0 
-              ? "Aucun post Instagram trouvé. Publiez du contenu sur Instagram pour le voir apparaître ici."
-              : "Aucun compte Instagram connecté."
+              ? t('messages.noPostsFound')
+              : t('messages.noAccountConnected')
             }
           </s-paragraph>
           
           {accounts.length > 0 && (
             <div style={{ marginTop: '16px' }}>
-              <s-text variant="headingSm">Comptes connectés :</s-text>
+              <s-text variant="headingSm">{t('messages.connectedAccounts')}</s-text>
               <s-stack direction="block" gap="tight" style={{ marginTop: '8px' }}>
                 {accounts.map((account) => (
                   <div key={account.id} style={{ 
@@ -96,7 +103,7 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                           color: '#bf0711'
                         }}
                       >
-                        Déconnecter
+                        {t('app.disconnect')}
                       </button>
                     </Form>
                   </div>
@@ -113,9 +120,12 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
     <>
       <Toast message={toast?.message} isError={toast?.isError} onDismiss={dismissToast} />
       
-      <StatsOverview posts={posts} accountsCount={accountsCount} />
       
-      <s-section heading="Vos posts Instagram">
+      <div style={{ marginBottom: '16px' }}>
+        <StatsOverview posts={posts} accountsCount={accountsCount} />
+      </div>
+      
+      <s-section heading={t('app.title')}>
         <s-stack direction="block" gap="base">
         <div style={{ 
           display: 'flex', 
@@ -125,10 +135,6 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
           gap: '16px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <s-text variant="bodySm">
-              {accountsCount} compte{accountsCount > 1 ? 's' : ''} • {filteredPosts.length} post{filteredPosts.length > 1 ? 's' : ''}
-            </s-text>
-            
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {accounts.map((account) => (
                 <div key={account.id} style={{ 
@@ -145,7 +151,8 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                     <input type="hidden" name="action" value="disconnect" />
                     <input type="hidden" name="accountId" value={account.id} />
                     <button 
-                      type="submit" 
+                      type="submit"
+                      aria-label={`Déconnecter le compte @${account.username}`}
                       style={{ 
                         padding: '2px 6px',
                         backgroundColor: 'transparent',
@@ -168,6 +175,7 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
               <select 
                 value={selectedAccount}
                 onChange={(e) => setSelectedAccount(e.target.value)}
+                aria-label={t('filters.filterByAccount')}
                 style={{
                   padding: '6px 12px',
                   border: '1px solid #c9cccf',
@@ -176,7 +184,7 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                   backgroundColor: '#fff'
                 }}
               >
-                <option value="all">Tous les comptes</option>
+                <option value="all">{t('filters.allAccounts')}</option>
                 {accounts.map((account) => (
                   <option key={account.id} value={account.username}>
                     @{account.username}
@@ -190,6 +198,8 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                 <button
                   key={type}
                   onClick={() => setPostType(type)}
+                  aria-label={t('aria.filterPosts', { type: t(`filters.${type}`) })}
+                  aria-pressed={postType === type}
                   style={{
                     padding: '6px 12px',
                     border: 'none',
@@ -203,7 +213,7 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                     transition: 'all 0.2s'
                   }}
                 >
-                  {type === 'all' ? 'Tous' : type === 'published' ? 'Publiés' : 'Tagués'}
+                  {t(`filters.${type}`)}
                 </button>
               ))}
             </div>
@@ -211,77 +221,42 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
           
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {selectedPosts.size > 0 && (
-              <button 
-                onClick={saveSelection}
-                disabled={isSaving}
-                style={{ 
-                  padding: '8px 16px', 
-                  backgroundColor: '#005bd3', 
-                  border: 'none', 
-                  borderRadius: '6px', 
-                  cursor: isSaving ? 'not-allowed' : 'pointer', 
-                  fontSize: '14px', 
-                  fontWeight: '500', 
-                  color: '#fff',
-                  opacity: isSaving ? 0.6 : 1
-                }}
-              >
-                {isSaving ? 'Sauvegarde...' : `💾 Sauvegarder (${selectedPosts.size})`}
-              </button>
+              <div onClick={saveSelection}>
+                <s-button variant="primary" disabled={isSaving}>
+                  {isSaving ? t('app.saving') : `${t('app.save')} (${selectedPosts.size})`}
+                </s-button>
+              </div>
             )}
             
-            <button 
-              onClick={() => {
-                const popup = window.open(
-                  `/api/instagram/connect?shop=${encodeURIComponent(shop)}`, 
-                  'instagram-auth', 
-                  'width=600,height=700'
-                );
-                
-                if (!popup) {
-                  alert('Veuillez autoriser les popups pour connecter Instagram');
-                  return;
+            <div onClick={() => {
+              const popup = window.open(
+                `/api/instagram/connect?shop=${encodeURIComponent(shop)}`, 
+                'instagram-auth', 
+                'width=600,height=700'
+              );
+              
+              if (!popup) {
+                alert('Veuillez autoriser les popups pour connecter Instagram');
+                return;
+              }
+              
+              const checkPopup = setInterval(() => {
+                if (popup.closed) {
+                  clearInterval(checkPopup);
+                  navigate('/app', { replace: true });
                 }
-                
-                const checkPopup = setInterval(() => {
-                  if (popup.closed) {
-                    clearInterval(checkPopup);
-                    console.log('Popup fermée - rechargement...');
-                    navigate('/app', { replace: true });
-                  }
-                }, 300);
-              }}
-              style={{ 
-                padding: '8px 16px', 
-                backgroundColor: '#008060', 
-                border: 'none', 
-                borderRadius: '6px', 
-                cursor: 'pointer', 
-                fontSize: '14px', 
-                fontWeight: '500', 
-                color: '#fff'
-              }}
-            >
-              + Ajouter un compte
-            </button>
+              }, 300);
+            }}>
+              <s-button>
+                {t('app.addAccount')}
+              </s-button>
+            </div>
             
             <Form method="post">
               <input type="hidden" name="action" value="disconnect_all" />
-              <button 
-                type="submit" 
-                style={{ 
-                  padding: '8px 16px', 
-                  backgroundColor: '#fff', 
-                  border: '1px solid #c9cccf', 
-                  borderRadius: '6px', 
-                  cursor: 'pointer', 
-                  fontSize: '14px', 
-                  fontWeight: '500', 
-                  color: '#bf0711'
-                }}
-              >
-                Déconnecter tout
-              </button>
+              <s-button type="submit" tone="critical">
+                {t('app.disconnectAll')}
+              </s-button>
             </Form>
           </div>
         </div>
@@ -291,34 +266,53 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
           gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', 
           gap: '16px' 
         }}>
-          {filteredPosts.map((post) => {
+          {filteredPosts.map((post, index) => {
             const isSelected = selectedPosts.has(post.id);
+            const isAboveFold = index < 3;
             return (
-            <div key={`${post.configId}-${post.id}`} style={{ 
-              border: isSelected ? '2px solid #005bd3' : '1px solid #e1e3e5', 
-              borderRadius: '8px', 
-              overflow: 'hidden',
-              backgroundColor: '#fff',
-              position: 'relative',
-              cursor: 'pointer'
-            }}
-            onClick={() => togglePostSelection(post.id)}
+            <div 
+              key={`${post.configId}-${post.id}`}
+              role="checkbox"
+              aria-checked={isSelected}
+              aria-label={t('aria.postCheckbox', { 
+                username: post.ownerUsername || post.accountUsername,
+                caption: post.caption ? post.caption.substring(0, 50) : t('post.noCaption')
+              })}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  togglePostSelection(post.id);
+                }
+              }}
+              style={{ 
+                border: isSelected ? '2px solid #005bd3' : '1px solid #e1e3e5', 
+                borderRadius: '8px', 
+                overflow: 'hidden',
+                backgroundColor: '#fff',
+                position: 'relative',
+                cursor: 'pointer'
+              }}
+              onClick={() => togglePostSelection(post.id)}
             >
               {post.mediaType === 'IMAGE' || post.mediaType === 'CAROUSEL_ALBUM' ? (
                 <img 
                   src={post.mediaUrl} 
-                  alt={post.caption || 'Instagram post'} 
+                  alt={post.caption ? t('aria.postImage', { caption: post.caption.substring(0, 100) }) : t('aria.postCheckbox', { username: post.ownerUsername || post.accountUsername, caption: '' })}
                   style={{ 
                     width: '100%', 
                     height: '200px', 
                     objectFit: 'cover',
                     display: 'block'
                   }} 
-                  loading="lazy"
+                  loading={isAboveFold ? 'eager' : 'lazy'}
+                  decoding="async"
+                  fetchpriority={isAboveFold ? 'high' : 'auto'}
                 />
               ) : post.mediaType === 'VIDEO' ? (
                 <video 
-                  src={post.mediaUrl} 
+                  src={post.mediaUrl}
+                  aria-label={t('aria.postVideo', { username: post.ownerUsername || post.accountUsername })}
                   style={{ 
                     width: '100%', 
                     height: '200px', 
@@ -368,7 +362,7 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                         borderRadius: '4px',
                         fontWeight: '600'
                       }}>
-                        TAGUÉ
+                        {t('post.tagged')}
                       </span>
                     )}
                   </div>
@@ -451,13 +445,14 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                   WebkitBoxOrient: 'vertical',
                   overflow: 'hidden'
                 }}>
-                  {post.caption || 'Pas de légende'}
+                  {post.caption || t('post.noCaption')}
                 </p>
                 
                 <a 
                   href={post.permalink} 
                   target="_blank" 
-                  rel="noopener noreferrer" 
+                  rel="noopener noreferrer"
+                  aria-label={t('aria.viewPost', { username: post.ownerUsername || post.accountUsername })}
                   style={{ 
                     fontSize: '12px', 
                     color: '#005bd3', 
@@ -465,7 +460,7 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
                     fontWeight: '500'
                   }}
                 >
-                  Voir sur Instagram →
+                  {t('post.viewOnInstagram')}
                 </a>
               </div>
             </div>
@@ -475,7 +470,7 @@ export function ConfiguredState({ posts = [], accountsCount = 0, accounts = [], 
         
         {filteredPosts.length === 0 && selectedAccount !== 'all' && (
           <s-text variant="bodySm" style={{ textAlign: 'center', color: '#6d7175', padding: '32px' }}>
-            Aucun post trouvé pour @{selectedAccount}
+            {t('messages.noPostsForAccount', { username: selectedAccount })}
           </s-text>
         )}
         </s-stack>

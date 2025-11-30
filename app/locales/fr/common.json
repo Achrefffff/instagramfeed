@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "Flux Instagram",
+    "connect": "Connecter Instagram",
+    "addAccount": "Ajouter un compte",
+    "disconnect": "Déconnecter",
+    "disconnectAll": "Déconnecter tout",
+    "save": "Sauvegarder",
+    "saving": "Sauvegarde..."
+  },
+  "stats": {
+    "posts": "Posts",
+    "accounts": "Comptes",
+    "likes": "Likes",
+    "comments": "Commentaires",
+    "reach": "Portée"
+  },
+  "filters": {
+    "all": "Tous",
+    "published": "Publiés",
+    "tagged": "Tagués",
+    "allAccounts": "Tous les comptes",
+    "filterByAccount": "Filtrer par compte Instagram"
+  },
+  "messages": {
+    "noPostsFound": "Aucun post Instagram trouvé. Publiez du contenu sur Instagram pour le voir apparaître ici.",
+    "noAccountConnected": "Aucun compte Instagram connecté.",
+    "connectedAccounts": "Comptes connectés :",
+    "saveSuccess": "{{count}} posts sauvegardés avec succès !",
+    "tooManyAttempts": "Trop de tentatives, réessayez dans 1 heure",
+    "tooManySaves": "Trop de sauvegardes, veuillez patienter quelques minutes",
+    "tooManyDisconnects": "Trop de déconnexions, veuillez patienter",
+    "networkError": "Erreur réseau : {{message}}",
+    "noPostsForAccount": "Aucun post trouvé pour @{{username}}"
+  },
+  "empty": {
+    "title": "Comment ça marche ?",
+    "step1Title": "1. Connectez Instagram",
+    "step1Desc": "Liez votre compte Instagram Business en un clic",
+    "step2Title": "2. Sélectionnez vos posts",
+    "step2Desc": "Choisissez les posts à afficher sur votre boutique",
+    "step3Title": "3. Publiez sur votre site",
+    "step3Desc": "Ajoutez le bloc Instagram Feed à votre thème",
+    "info": "Transformez vos posts Instagram en contenu engageant pour votre boutique. Synchronisation automatique et affichage personnalisable.",
+    "warning": "Vous aurez besoin d'un compte Instagram Business connecté à une page Facebook pour utiliser cette application."
+  },
+  "post": {
+    "tagged": "TAGUÉ",
+    "noCaption": "Pas de légende",
+    "viewOnInstagram": "Voir sur Instagram →"
+  },
+  "aria": {
+    "filterPosts": "Filtrer les posts : {{type}}",
+    "disconnectAccount": "Déconnecter le compte @{{username}}",
+    "postCheckbox": "Post Instagram de @{{username}} - {{caption}}",
+    "postImage": "Post Instagram : {{caption}}",
+    "postVideo": "Vidéo Instagram de @{{username}}",
+    "viewPost": "Voir le post de @{{username}} sur Instagram (ouvre dans un nouvel onglet)",
+    "connectButton": "Connecter votre compte Instagram Business",
+    "stat": "{{label}} : {{value}}"
+  }
+}

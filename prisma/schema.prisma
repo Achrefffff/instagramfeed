@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Session {
@@ -31,11 +31,14 @@ model InstagramConfig {
   accessToken String
   username    String
   isActive    Boolean  @default(true)
+  tokenExpiresAt DateTime? // Long-lived token expire après ~60 jours
+  lastRefreshedAt DateTime? // Dernière tentative de refresh
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@unique([shop, username])
   @@index([shop, isActive])
+  @@index([shop, tokenExpiresAt])
 }
 
 model InstagramPost {

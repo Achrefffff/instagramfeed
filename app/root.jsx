@@ -1,6 +1,11 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { useEffect } from "react";
+import "./i18n";
 
 export default function App() {
+  useEffect(() => {
+    import("./i18n");
+  }, []);
   return (
     <html lang="en">
       <head>

@@ -1,0 +1,62 @@
+{
+  "app": {
+    "title": "Instagram-Feed",
+    "connect": "Instagram verbinden",
+    "addAccount": "Konto hinzufügen",
+    "disconnect": "Trennen",
+    "disconnectAll": "Alle trennen",
+    "save": "Speichern",
+    "saving": "Speichern..."
+  },
+  "stats": {
+    "posts": "Beiträge",
+    "accounts": "Konten",
+    "likes": "Likes",
+    "comments": "Kommentare",
+    "reach": "Reichweite"
+  },
+  "filters": {
+    "all": "Alle",
+    "published": "Veröffentlicht",
+    "tagged": "Markiert",
+    "allAccounts": "Alle Konten",
+    "filterByAccount": "Nach Instagram-Konto filtern"
+  },
+  "messages": {
+    "noPostsFound": "Keine Instagram-Beiträge gefunden. Veröffentlichen Sie Inhalte auf Instagram, um sie hier zu sehen.",
+    "noAccountConnected": "Kein Instagram-Konto verbunden.",
+    "connectedAccounts": "Verbundene Konten:",
+    "saveSuccess": "{{count}} Beiträge erfolgreich gespeichert!",
+    "tooManyAttempts": "Zu viele Versuche, bitte versuchen Sie es in 1 Stunde erneut",
+    "tooManySaves": "Zu viele Speicherungen, bitte warten Sie einige Minuten",
+    "tooManyDisconnects": "Zu viele Trennungen, bitte warten Sie",
+    "networkError": "Netzwerkfehler: {{message}}",
+    "noPostsForAccount": "Keine Beiträge für @{{username}} gefunden"
+  },
+  "empty": {
+    "title": "Wie funktioniert es?",
+    "step1Title": "1. Instagram verbinden",
+    "step1Desc": "Verknüpfen Sie Ihr Instagram Business-Konto mit einem Klick",
+    "step2Title": "2. Wählen Sie Ihre Beiträge",
+    "step2Desc": "Wählen Sie die Beiträge aus, die in Ihrem Shop angezeigt werden sollen",
+    "step3Title": "3. Auf Ihrer Website veröffentlichen",
+    "step3Desc": "Fügen Sie den Instagram-Feed-Block zu Ihrem Theme hinzu",
+    "info": "Verwandeln Sie Ihre Instagram-Beiträge in ansprechende Inhalte für Ihren Shop. Automatische Synchronisierung und anpassbare Anzeige.",
+    "warning": "Sie benötigen ein Instagram Business-Konto, das mit einer Facebook-Seite verbunden ist, um diese Anwendung zu nutzen."
+  },
+  "post": {
+    "tagged": "MARKIERT",
+    "noCaption": "Keine Beschriftung",
+    "viewOnInstagram": "Auf Instagram ansehen →"
+  },
+  "aria": {
+    "filterPosts": "Beiträge filtern: {{type}}",
+    "disconnectAccount": "Konto @{{username}} trennen",
+    "postCheckbox": "Instagram-Beitrag von @{{username}} - {{caption}}",
+    "postImage": "Instagram-Beitrag: {{caption}}",
+    "postVideo": "Instagram-Video von @{{username}}",
+    "viewPost": "Beitrag von @{{username}} auf Instagram ansehen (öffnet in neuem Tab)",
+    "connectButton": "Verbinden Sie Ihr Instagram Business-Konto",
+    "stat": "{{label}}: {{value}}"
+  }
+}

@@ -1,11 +1,14 @@
+import { useTranslation } from "react-i18next";
+
 export function StatsOverview({ posts = [], accountsCount = 0 }) {
+  const { t } = useTranslation();
   const totalLikes = posts.reduce((sum, post) => sum + (post.likeCount || 0), 0);
   const totalComments = posts.reduce((sum, post) => sum + (post.commentsCount || 0), 0);
   const totalReach = posts.reduce((sum, post) => sum + (post.reach || 0), 0);
 
   const stats = [
     { 
-      label: 'Posts', 
+      label: t('stats.posts'), 
       value: posts.length, 
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style={{ width: '32px', height: '32px' }}>
@@ -14,7 +17,7 @@ export function StatsOverview({ posts = [], accountsCount = 0 }) {
       )
     },
     { 
-      label: 'Comptes', 
+      label: t('stats.accounts'), 
       value: accountsCount, 
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style={{ width: '32px', height: '32px' }}>
@@ -23,7 +26,7 @@ export function StatsOverview({ posts = [], accountsCount = 0 }) {
       )
     },
     { 
-      label: 'Likes', 
+      label: t('stats.likes'), 
       value: totalLikes.toLocaleString(), 
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style={{ width: '32px', height: '32px' }}>
@@ -32,7 +35,7 @@ export function StatsOverview({ posts = [], accountsCount = 0 }) {
       )
     },
     { 
-      label: 'Commentaires', 
+      label: t('stats.comments'), 
       value: totalComments.toLocaleString(), 
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style={{ width: '32px', height: '32px' }}>
@@ -44,7 +47,7 @@ export function StatsOverview({ posts = [], accountsCount = 0 }) {
 
   if (totalReach > 0) {
     stats.push({ 
-      label: 'Portée', 
+      label: t('stats.reach'), 
       value: totalReach.toLocaleString(), 
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style={{ width: '32px', height: '32px' }}>
@@ -60,12 +63,13 @@ export function StatsOverview({ posts = [], accountsCount = 0 }) {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))',
       gap: '8px',
-      marginBottom: '16px',
-      maxWidth: '600px'
+      flex: 1
     }}>
       {stats.map((stat) => (
         <div
           key={stat.label}
+          role="status"
+          aria-label={t('aria.stat', { label: stat.label, value: stat.value })}
           style={{
             padding: '8px',
             backgroundColor: '#fff',
@@ -74,7 +78,7 @@ export function StatsOverview({ posts = [], accountsCount = 0 }) {
             textAlign: 'center'
           }}
         >
-          <div style={{ marginBottom: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>{stat.icon}</div>
+          <div style={{ marginBottom: '4px', display: 'flex', justifyContent: 'center', alignItems: 'center' }} aria-hidden="true">{stat.icon}</div>
           <div style={{ fontSize: '16px', fontWeight: '600', color: '#202223', marginBottom: '2px' }}>
             {stat.value}
           </div>

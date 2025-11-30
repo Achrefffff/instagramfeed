@@ -2,11 +2,11 @@
 
 client_id = "b403c2e13733c9e3135f9d0e5a41f716"
 name = "hop"
-application_url =" https://again-penetration-finish-precious.trycloudflare.com/"
+application_url ="https://register-sen-mac-groundwater.trycloudflare.com/"
 embedded = true
 
 [build]
-automatically_update_urls_on_dev = true
+automatically_update_urls_on_dev = false
 include_config_on_deploy = true
 
 [webhooks]
@@ -19,6 +19,10 @@ api_version = "2026-01"
   [[webhooks.subscriptions]]
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "/webhooks"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
