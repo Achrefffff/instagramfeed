@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const TagIcon = () => (
   <svg 
@@ -16,10 +17,11 @@ const TagIcon = () => (
 );
 
 export function ProductTagButton({ postId, onTagClick, taggedProductsCount = 0 }) {
+  const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = (e) => {
-    e.stopPropagation(); // Empêche la sélection du post
+    e.stopPropagation();
     onTagClick(postId);
   };
 
@@ -44,11 +46,11 @@ export function ProductTagButton({ postId, onTagClick, taggedProductsCount = 0 }
         width: "100%",
         justifyContent: "center",
       }}
-      title={`Étiqueter des produits${taggedProductsCount > 0 ? ` (${taggedProductsCount} produit${taggedProductsCount > 1 ? 's' : ''} lié${taggedProductsCount > 1 ? 's' : ''})` : ''}`}
+      title={taggedProductsCount > 0 ? t("productTag.buttonWithCount", { count: taggedProductsCount }) : t("productTag.button")}
     >
       <TagIcon />
       <span>
-        Étiqueter
+        {t("productTag.button")}
         {taggedProductsCount > 0 && (
           <span style={{ 
             marginLeft: "4px", 

@@ -49,6 +49,22 @@
     "noCaption": "No caption",
     "viewOnInstagram": "View on Instagram →"
   },
+  "productTag": {
+    "button": "Tag",
+    "buttonWithCount": "Tag ({{count}})",
+    "modalTitle": "Select products to tag",
+    "searchLabel": "Search products",
+    "searchPlaceholder": "Type to search...",
+    "saveButton": "Tag {{count}} product{{plural}}",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "noProducts": "No products found",
+    "noProductsSearch": "No products match your search.",
+    "noProductsStore": "You don't have any products in your store yet.",
+    "active": "Active",
+    "inactive": "Inactive",
+    "loading": "Loading products"
+  },
   "aria": {
     "filterPosts": "Filter posts: {{type}}",
     "disconnectAccount": "Disconnect account @{{username}}",

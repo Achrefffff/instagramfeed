@@ -49,6 +49,22 @@
     "noCaption": "Pas de légende",
     "viewOnInstagram": "Voir sur Instagram →"
   },
+  "productTag": {
+    "button": "Étiqueter",
+    "buttonWithCount": "Étiqueter ({{count}})",
+    "modalTitle": "Sélectionner des produits à étiqueter",
+    "searchLabel": "Rechercher des produits",
+    "searchPlaceholder": "Tapez pour rechercher...",
+    "saveButton": "Étiqueter {{count}} produit{{plural}}",
+    "saving": "Sauvegarde...",
+    "cancel": "Annuler",
+    "noProducts": "Aucun produit trouvé",
+    "noProductsSearch": "Aucun produit ne correspond à votre recherche.",
+    "noProductsStore": "Vous n'avez pas encore de produits dans votre boutique.",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "loading": "Chargement des produits"
+  },
   "aria": {
     "filterPosts": "Filtrer les posts : {{type}}",
     "disconnectAccount": "Déconnecter le compte @{{username}}",

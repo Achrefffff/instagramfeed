@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { Modal, TextField, Spinner, EmptyState, Checkbox, Badge, Stack, Text } from "@shopify/polaris";
+import { useTranslation } from "react-i18next";
 
 export function ProductSelectorModal({ 
   isOpen, 
@@ -7,13 +9,13 @@ export function ProductSelectorModal({
   postId,
   currentlyTaggedProducts = [] 
 }) {
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState(new Set(currentlyTaggedProducts));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Charger les produits quand la modal s'ouvre
   useEffect(() => {
     if (isOpen) {
       loadProducts();
@@ -65,36 +67,32 @@ export function ProductSelectorModal({
     product.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const primaryAction = {
-    content: saving ? "Sauvegarde..." : `Étiqueter ${selectedProducts.size} produit${selectedProducts.size > 1 ? 's' : ''}`,
-    onAction: handleSave,
-    disabled: saving,
-  };
-
-  const secondaryActions = [
-    {
-      content: "Annuler",
-      onAction: onClose,
-      disabled: saving,
-    },
-  ];
-
   return (
-    <s-modal
+    <Modal
       open={isOpen}
       onClose={onClose}
-      title="Sélectionner des produits à étiqueter"
-      primaryAction={primaryAction}
-      secondaryActions={secondaryActions}
+      title={t("productTag.modalTitle")}
+      primaryAction={{
+        content: saving ? t("productTag.saving") : t("productTag.saveButton", { count: selectedProducts.size, plural: selectedProducts.size > 1 ? 's' : '' }),
+        onAction: handleSave,
+        disabled: saving,
+      }}
+      secondaryActions={[
+        {
+          content: t("productTag.cancel"),
+          onAction: onClose,
+          disabled: saving,
+        },
+      ]}
       size="large"
     >
-      <s-modal-section>
-        <s-stack direction="block" gap="base">
-          <s-text-field
-            label="Rechercher des produits"
+      <Modal.Section>
+        <Stack vertical spacing="loose">
+          <TextField
+            label={t("productTag.searchLabel")}
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Tapez pour rechercher..."
+            placeholder={t("productTag.searchPlaceholder")}
             clearButton
             onClearButtonClick={() => setSearchQuery("")}
           />
@@ -105,23 +103,23 @@ export function ProductSelectorModal({
               justifyContent: "center", 
               padding: "40px" 
             }}>
-              <s-spinner accessibilityLabel="Chargement des produits" size="large" />
+              <Spinner accessibilityLabel={t("productTag.loading")} size="large" />
             </div>
           ) : (
             <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-              <s-stack direction="block" gap="tight">
+              <Stack vertical spacing="tight">
                 {filteredProducts.length === 0 ? (
-                  <s-empty-state
-                    heading="Aucun produit trouvé"
+                  <EmptyState
+                    heading={t("productTag.noProducts")}
                     image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
                   >
                     <p>
                       {searchQuery 
-                        ? "Aucun produit ne correspond à votre recherche."
-                        : "Vous n'avez pas encore de produits dans votre boutique."
+                        ? t("productTag.noProductsSearch")
+                        : t("productTag.noProductsStore")
                       }
                     </p>
-                  </s-empty-state>
+                  </EmptyState>
                 ) : (
                   filteredProducts.map((product) => {
                     const isSelected = selectedProducts.has(product.id);
@@ -141,7 +139,7 @@ export function ProductSelectorModal({
                           transition: "all 0.2s ease",
                         }}
                       >
-                        <s-checkbox
+                        <Checkbox
                           checked={isSelected}
                           onChange={() => handleProductToggle(product.id)}
                         />
@@ -159,30 +157,30 @@ export function ProductSelectorModal({
                           />
                         )}
                         
-                        <s-stack direction="block" gap="tight" style={{ flex: 1 }}>
-                          <s-text variant="bodyMd" fontWeight="semibold">
+                        <Stack vertical spacing="extraTight" distribution="fill">
+                          <Text variant="bodyMd" fontWeight="semibold">
                             {product.title}
-                          </s-text>
+                          </Text>
                           
                           {product.priceRangeV2?.minVariantPrice && (
-                            <s-text variant="bodySm" color="subdued">
+                            <Text variant="bodySm" color="subdued">
                               {product.priceRangeV2.minVariantPrice.amount} {product.priceRangeV2.minVariantPrice.currencyCode}
-                            </s-text>
+                            </Text>
                           )}
                           
-                          <s-badge status={product.status === 'ACTIVE' ? 'success' : 'attention'}>
-                            {product.status === 'ACTIVE' ? 'Actif' : 'Inactif'}
-                          </s-badge>
-                        </s-stack>
+                          <Badge status={product.status === 'ACTIVE' ? 'success' : 'attention'}>
+                            {product.status === 'ACTIVE' ? t("productTag.active") : t("productTag.inactive")}
+                          </Badge>
+                        </Stack>
                       </div>
                     );
                   })
                 )}
-              </s-stack>
+              </Stack>
             </div>
           )}
-        </s-stack>
-      </s-modal-section>
-    </s-modal>
+        </Stack>
+      </Modal.Section>
+    </Modal>
   );
 }
