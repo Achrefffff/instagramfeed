@@ -1,5 +1,4 @@
-import { data } from "react-router";
-import prisma from "../db.server";
+import { json } from "react-router";
 import { sanitizeString } from "../utils/validation.server";
 import { logger } from "../utils/logger.server";
 
@@ -11,7 +10,7 @@ export const action = async ({ request }) => {
     logger.warn("Invalid shop_domain in customers.redact webhook", {
       shop_domain,
     });
-    return data({ error: "Invalid shop_domain" }, { status: 400 });
+    return json({ error: "Invalid shop_domain" }, { status: 400 });
   }
 
   const sanitizedShop = sanitizeString(shop_domain);
@@ -25,5 +24,5 @@ export const action = async ({ request }) => {
   // Elle stocke uniquement des données Instagram du marchand
   // Aucune suppression nécessaire pour les données clients
 
-  return data({ message: "No customer data to redact" }, { status: 200 });
+  return json({ message: "No customer data to redact" }, { status: 200 });
 };

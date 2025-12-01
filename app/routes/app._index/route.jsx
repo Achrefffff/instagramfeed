@@ -4,6 +4,7 @@ import {
   useNavigate,
   useRouteError,
   data,
+  useNavigation,
 } from "react-router";
 import { useEffect } from "react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -302,7 +303,11 @@ export default function Index() {
   } = useLoaderData();
   const actionData = useActionData();
   const navigate = useNavigate();
+  const navigation = useNavigation();
   const { t } = useTranslation();
+
+  // Détecter si le loader est en train de charger
+  const isLoading = navigation.state === "loading";
 
   useEffect(() => {
     if (actionData?.redirect) {
@@ -312,6 +317,58 @@ export default function Index() {
 
   return (
     <s-page heading={t("app.title")}>
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+
+      {isLoading && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            backdropFilter: "blur(2px)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                border: "4px solid #e1e3e5",
+                borderTop: "4px solid #005bd3",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            />
+            <p
+              style={{
+                fontSize: "16px",
+                color: "#202223",
+                fontWeight: "500",
+                margin: 0,
+              }}
+            >
+              Chargement...
+            </p>
+          </div>
+        </div>
+      )}
+
       <div style={{ position: "absolute", top: "16px", right: "16px" }}>
         <LanguageSwitcher />
       </div>

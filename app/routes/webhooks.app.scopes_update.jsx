@@ -1,5 +1,4 @@
 import { authenticate } from "../shopify.server";
-import db from "../db.server";
 import { logger } from "../utils/logger.server";
 
 export const action = async ({ request }) => {
@@ -8,16 +7,8 @@ export const action = async ({ request }) => {
   logger.info("Webhook received", { topic, shop });
   const current = payload.current;
 
-  if (session) {
-    await db.session.update({
-      where: {
-        id: session.id,
-      },
-      data: {
-        scope: current.toString(),
-      },
-    });
-  }
+  // Note: Session scope update handled by Shopify automatically
+  logger.info("Scopes updated", { shop, newScopes: current });
 
   return new Response();
 };

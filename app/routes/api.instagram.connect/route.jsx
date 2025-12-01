@@ -38,6 +38,7 @@ export const loader = async ({ request }) => {
     const state = `${shop}-${Date.now()}`;
     const authUrl = instagram.getAuthUrl(state);
     
+    console.log("🔗 URL OAuth générée:", authUrl);
     logger.info("Instagram OAuth initiated", { shop });
     
     throw redirect(authUrl);

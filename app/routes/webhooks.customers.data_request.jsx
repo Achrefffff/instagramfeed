@@ -1,5 +1,4 @@
-import { data } from "react-router";
-import prisma from "../db.server";
+import { json } from "react-router";
 import { sanitizeString } from "../utils/validation.server";
 import { logger } from "../utils/logger.server";
 

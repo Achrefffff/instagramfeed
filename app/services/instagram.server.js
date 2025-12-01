@@ -2,11 +2,24 @@ import { logger } from "../utils/logger.server";
 
 const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
-const REDIRECT_URI = process.env.INSTAGRAM_REDIRECT_URI;
+
+// Utiliser l'URL Shopify dynamique au lieu du .env
+const getRedirectUri = () => {
+  const shopifyUrl = process.env.SHOPIFY_APP_URL;
+  if (shopifyUrl) {
+    return `${shopifyUrl}/auth/instagram/callback`;
+  }
+  // Fallback sur .env si SHOPIFY_APP_URL n'existe pas
+  return process.env.INSTAGRAM_REDIRECT_URI;
+};
+
+const REDIRECT_URI = getRedirectUri();
+
+console.log("🔍 INSTAGRAM_REDIRECT_URI =", REDIRECT_URI);
 
 if (!INSTAGRAM_APP_ID || !INSTAGRAM_APP_SECRET || !REDIRECT_URI) {
   const error = new Error(
-    "Missing required Instagram environment variables: INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET, INSTAGRAM_REDIRECT_URI",
+    "Missing required Instagram environment variables: INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET",
   );
   logger.error("Instagram configuration error", error);
   throw error;
