@@ -3,7 +3,6 @@ import { authenticate } from "../../shopify.server";
 import { productTagging } from "../../services/productTagging.server";
 import { handleError, ValidationError } from "../../utils/errors.server";
 import { logger } from "../../utils/logger.server";
-import { checkRateLimit, RATE_LIMITS } from "../../utils/rateLimit.server";
 
 export const action = async ({ request }) => {
   const startTime = Date.now();
@@ -11,25 +10,7 @@ export const action = async ({ request }) => {
     const { admin, session } = await authenticate.admin(request);
     const { shop } = session;
 
-    // Rate limiting: 30 actions par 5 minutes
-    const rateLimit = checkRateLimit(
-      `product-tag:${shop}`,
-      30,
-      5 * 60 * 1000
-    );
-
-    if (!rateLimit.allowed) {
-      logger.warn("Rate limit exceeded for product tagging", { shop });
-      return data(
-        { error: "Trop d'actions, veuillez patienter quelques minutes" },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
-          },
-        }
-      );
-    }
+    // Note: Rate limiting retiré pour éviter les erreurs de build client/serveur
 
     const body = await request.json();
     const { action: actionType, postId, productIds } = body;
