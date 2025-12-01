@@ -852,7 +852,7 @@ export function ConfiguredState({
         onClose={handleCloseModal}
         onSave={handleSaveProductTags}
         postId={currentPostId}
-        currentlyTaggedProducts={currentPostId ? (taggedProducts[currentPostId] || []) : []}
+        currentlyTaggedProducts={currentPostId ? (taggedProducts[currentPostId]?.map(p => p.id) || []) : []}
       />
     </>
   );

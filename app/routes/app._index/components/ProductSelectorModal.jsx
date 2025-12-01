@@ -18,7 +18,9 @@ export function ProductSelectorModal({
   useEffect(() => {
     if (isOpen) {
       loadProducts();
-      setSelectedProducts(new Set(currentlyTaggedProducts));
+      // S'assurer que currentlyTaggedProducts contient des IDs string
+      const taggedIds = currentlyTaggedProducts.map(id => String(id));
+      setSelectedProducts(new Set(taggedIds));
     }
   }, [isOpen, currentlyTaggedProducts]);
 
@@ -38,12 +40,13 @@ export function ProductSelectorModal({
   };
 
   const handleProductToggle = useCallback((productId) => {
+    const id = String(productId);
     setSelectedProducts(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(productId)) {
-        newSet.delete(productId);
+      if (newSet.has(id)) {
+        newSet.delete(id);
       } else {
-        newSet.add(productId);
+        newSet.add(id);
       }
       return newSet;
     });
@@ -128,7 +131,7 @@ export function ProductSelectorModal({
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {filteredProducts.map((product) => {
-                    const isSelected = selectedProducts.has(product.id);
+                    const isSelected = selectedProducts.has(String(product.id));
                     return (
                       <div
                         key={product.id}
@@ -147,7 +150,10 @@ export function ProductSelectorModal({
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          onChange={() => handleProductToggle(product.id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleProductToggle(product.id);
+                          }}
                         />
                         
                         {product.featuredImage?.url && (
