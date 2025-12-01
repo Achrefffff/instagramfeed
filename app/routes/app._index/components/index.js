@@ -5,3 +5,4 @@ export { StatsOverview } from "./StatsOverview";
 export { Toast } from "./Toast";
 export { FeaturesSidebar } from "./FeaturesSidebar";
 export { ProductTagButton } from "./ProductTagButton";
+export { ProductSelectorModal } from "./ProductSelectorModal";

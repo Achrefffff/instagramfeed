@@ -4,6 +4,7 @@ import { useToast } from "../../../hooks/useToast";
 import { StatsOverview } from "./StatsOverview";
 import { Toast } from "./Toast";
 import { ProductTagButton } from "./ProductTagButton";
+import { ProductSelectorModal } from "./ProductSelectorModal";
 import { useTranslation } from "react-i18next";
 
 export function ConfiguredState({
@@ -19,6 +20,8 @@ export function ConfiguredState({
   const [selectedPosts, setSelectedPosts] = useState(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [taggedProducts, setTaggedProducts] = useState({});
+  const [modalOpen, setModalOpen] = useState(false);
+  const [currentPostId, setCurrentPostId] = useState(null);
   const { toast, showToast, dismissToast } = useToast();
 
   // Charger les produits étiquetés au démarrage
@@ -38,9 +41,43 @@ export function ConfiguredState({
   }, []);
 
   const handleProductTag = async (postId) => {
-    // TODO: Ouvrir la modal de sélection de produits
-    console.log("Étiqueter des produits pour le post:", postId);
-    showToast("Fonctionnalité d'étiquetage en cours de développement");
+    setCurrentPostId(postId);
+    setModalOpen(true);
+  };
+
+  const handleSaveProductTags = async (postId, selectedProductIds) => {
+    try {
+      const response = await fetch("/api/product-tagging", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "tag",
+          postId,
+          productIds: selectedProductIds,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Mettre à jour l'état local
+        setTaggedProducts(prev => ({
+          ...prev,
+          [postId]: result.taggedProducts || []
+        }));
+        showToast(result.message || "Produits étiquetés avec succès");
+      } else {
+        showToast(result.error || "Erreur lors de l'étiquetage", true);
+      }
+    } catch (error) {
+      showToast("Erreur réseau lors de l'étiquetage", true);
+      console.error("Failed to save product tags:", error);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setCurrentPostId(null);
   };
 
 
@@ -715,6 +752,14 @@ export function ConfiguredState({
           )}
         </s-stack>
       </s-section>
+
+      <ProductSelectorModal
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        onSave={handleSaveProductTags}
+        postId={currentPostId}
+        currentlyTaggedProducts={currentPostId ? (taggedProducts[currentPostId] || []) : []}
+      />
     </>
   );
 }
