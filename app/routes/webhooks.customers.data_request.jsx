@@ -1,4 +1,4 @@
-import { json } from "react-router";
+import { data } from "react-router";
 import { sanitizeString } from "../utils/validation.server";
 import { logger } from "../utils/logger.server";
 
@@ -8,7 +8,7 @@ export const action = async ({ request }) => {
 
   if (!shop_domain || typeof shop_domain !== "string") {
     logger.warn("Invalid shop_domain in customers.data_request webhook", { shop_domain });
-    return json({ error: "Invalid shop_domain" }, { status: 400 });
+    return data({ error: "Invalid shop_domain" }, { status: 400 });
   }
 
   const sanitizedShop = sanitizeString(shop_domain);
@@ -22,5 +22,5 @@ export const action = async ({ request }) => {
   // Elle stocke uniquement des données Instagram liées au marchand
   // Donc il n'y a généralement rien à retourner pour un client final
 
-  return json({ message: "No customer data stored" }, { status: 200 });
+  return data({ message: "No customer data stored" }, { status: 200 });
 };
