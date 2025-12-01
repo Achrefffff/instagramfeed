@@ -25,12 +25,16 @@ export const action = async ({ request }) => {
           throw new ValidationError("productIds requis pour l'étiquetage");
         }
 
-        const taggedProducts = await productTagging.tagProductsToPost(
+        await productTagging.tagProductsToPost(
           admin, 
           shop, 
           postId, 
           productIds
         );
+
+        // Récupérer les détails complets des produits étiquetés pour ce post
+        const taggedProductsWithDetails = await productTagging.getTaggedProductsWithDetails(admin, shop);
+        const postProducts = taggedProductsWithDetails[postId] || [];
 
         const duration = Date.now() - startTime;
         logger.info("Products tagged successfully", {
@@ -42,7 +46,7 @@ export const action = async ({ request }) => {
 
         return data({ 
           success: true, 
-          taggedProducts,
+          taggedProducts: postProducts,
           message: `${productIds.length} produit(s) étiquetés avec succès`
         });
       }
@@ -110,8 +114,8 @@ export const loader = async ({ request }) => {
     }
 
     if (action === "tagged") {
-      // Récupérer tous les produits étiquetés
-      const taggedProducts = await productTagging.getTaggedProducts(admin, shop);
+      // Récupérer tous les produits étiquetés avec leurs détails
+      const taggedProducts = await productTagging.getTaggedProductsWithDetails(admin, shop);
       return data({ 
         success: true, 
         taggedProducts

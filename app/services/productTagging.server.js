@@ -184,8 +184,84 @@ export const productTagging = {
   },
 
   /**
-   * Récupère les produits de la boutique
+   * Récupère les produits étiquetés avec leurs détails complets
    */
+  async getTaggedProductsWithDetails(admin, shop) {
+    try {
+      const taggedProductIds = await this.getTaggedProducts(admin, shop);
+      const result = {};
+      
+      // Pour chaque post, récupérer les détails des produits
+      for (const [postId, productIds] of Object.entries(taggedProductIds)) {
+        if (productIds && productIds.length > 0) {
+          const productDetails = await this.getProductsByIds(admin, productIds);
+          result[postId] = productDetails;
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      logger.error("Failed to get tagged products with details", error, { shop });
+      return {};
+    }
+  },
+
+  /**
+   * Récupère les détails des produits par leurs IDs
+   */
+  async getProductsByIds(admin, productIds) {
+    try {
+      if (!productIds || productIds.length === 0) {
+        return [];
+      }
+      
+      // Récupérer les produits un par un car la recherche par ID multiple n'est pas supportée directement
+      const products = [];
+      
+      for (const productId of productIds) {
+        try {
+          const response = await admin.graphql(
+            `#graphql
+            query getProductById($id: ID!) {
+              product(id: $id) {
+                id
+                title
+                handle
+                status
+                featuredImage {
+                  url
+                  altText
+                }
+                priceRangeV2 {
+                  minVariantPrice {
+                    amount
+                    currencyCode
+                  }
+                }
+              }
+            }`,
+            {
+              variables: { id: productId },
+            }
+          );
+
+          const data = await response.json();
+          if (data.data?.product) {
+            products.push(data.data.product);
+          }
+        } catch (error) {
+          logger.error(`Failed to get product ${productId}`, error);
+          // Continue avec les autres produits
+        }
+      }
+      
+      return products;
+    } catch (error) {
+      logger.error("Failed to get products by IDs", error);
+      return [];
+    }
+  },
+
   /**
    * Récupère les produits de la boutique
    */
