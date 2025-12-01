@@ -19,14 +19,7 @@ export function ConfiguredState({
   const [isSaving, setIsSaving] = useState(false);
   const { toast, showToast, dismissToast } = useToast();
 
-  // Debug logs
-  useEffect(() => {
-    console.log("🔍 DEBUG: selectedPosts.size =", selectedPosts.size);
-    if (selectedPosts.size > 0) {
-      console.log("✅ DEBUG: Affichage des boutons car selectedPosts.size > 0");
-      console.log("🎯 DEBUG: Rendu du bouton Lier aux produits");
-    }
-  }, [selectedPosts.size]);
+
   const Stat = ({ label, value }) => (
     <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
       <span>{label}</span>
@@ -41,7 +34,7 @@ export function ConfiguredState({
       } else {
         newSet.add(postId);
       }
-      console.log("📝 DEBUG: Posts sélectionnés:", Array.from(newSet));
+
       return newSet;
     });
   };
@@ -300,7 +293,7 @@ export function ConfiguredState({
                   </div>
                   <div
                     onClick={() => {
-                      console.log("🔗 DEBUG: Clic sur bouton Lier aux produits");
+
                       if (selectedPosts.size === 1) {
                         const postId = Array.from(selectedPosts)[0];
                         navigate(`/app/products?postId=${postId}`);
@@ -308,7 +301,7 @@ export function ConfiguredState({
                         navigate("/app/products");
                       }
                     }}
-                    style={{ backgroundColor: "red", padding: "10px" }}
+
                   >
                     <s-button>
                       Lier aux produits ({selectedPosts.size})
