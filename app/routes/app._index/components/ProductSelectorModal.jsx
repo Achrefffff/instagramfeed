@@ -66,117 +66,154 @@ export function ProductSelectorModal({
     product.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  return (
-    <s-modal 
-      id={`product-modal-${postId}`}
-      heading={t("productTag.modalTitle")}
-      size="large"
-    >
-      <s-text-field
-        label={t("productTag.searchLabel")}
-        value={searchQuery}
-        placeholder={t("productTag.searchPlaceholder")}
-        onInput={(e) => setSearchQuery(e.target.value)}
-      />
+  if (!isOpen) return null;
 
-      {loading ? (
-        <div style={{ 
-          display: "flex", 
-          justifyContent: "center", 
-          padding: "40px" 
-        }}>
-          <s-spinner size="large" />
+  return (
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        width: "90%",
+        maxWidth: "600px",
+        maxHeight: "80vh",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column"
+      }}>
+        <div style={{ padding: "16px", borderBottom: "1px solid #e1e3e5" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "600" }}>
+              {t("productTag.modalTitle")}
+            </h2>
+            <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer" }}>×</button>
+          </div>
         </div>
-      ) : (
-        <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-          {filteredProducts.length === 0 ? (
-            <s-empty-state heading={t("productTag.noProducts")}>
-              <s-text>
-                {searchQuery 
-                  ? t("productTag.noProductsSearch")
-                  : t("productTag.noProductsStore")
-                }
-              </s-text>
-            </s-empty-state>
+        
+        <div style={{ padding: "16px", flex: 1, overflow: "auto" }}>
+          <input
+            type="text"
+            placeholder={t("productTag.searchPlaceholder")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              border: "1px solid #c9cccf",
+              borderRadius: "6px",
+              marginBottom: "16px"
+            }}
+          />
+
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "40px" }}>
+              Chargement...
+            </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {filteredProducts.map((product) => {
-                const isSelected = selectedProducts.has(product.id);
-                return (
-                  <div
-                    key={product.id}
-                    onClick={() => handleProductToggle(product.id)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      padding: "12px",
-                      border: isSelected ? "2px solid #005bd3" : "1px solid #e1e3e5",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      backgroundColor: isSelected ? "#f0f8ff" : "#fff",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handleProductToggle(product.id)}
-                    />
-                    
-                    {product.featuredImage?.url && (
-                      <img
-                        src={product.featuredImage.url}
-                        alt={product.featuredImage.altText || product.title}
+            <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+              {filteredProducts.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px", color: "#6d7175" }}>
+                  {searchQuery ? t("productTag.noProductsSearch") : t("productTag.noProductsStore")}
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {filteredProducts.map((product) => {
+                    const isSelected = selectedProducts.has(product.id);
+                    return (
+                      <div
+                        key={product.id}
+                        onClick={() => handleProductToggle(product.id)}
                         style={{
-                          width: "50px",
-                          height: "50px",
-                          objectFit: "cover",
-                          borderRadius: "6px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          padding: "12px",
+                          border: isSelected ? "2px solid #005bd3" : "1px solid #e1e3e5",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          backgroundColor: isSelected ? "#f0f8ff" : "#fff",
                         }}
-                      />
-                    )}
-                    
-                    <div style={{ flex: 1 }}>
-                      <s-text variant="bodyMd" style={{ fontWeight: "600", display: "block" }}>
-                        {product.title}
-                      </s-text>
-                      
-                      {product.priceRangeV2?.minVariantPrice && (
-                        <s-text variant="bodySm" style={{ color: "#6d7175" }}>
-                          {product.priceRangeV2.minVariantPrice.amount} {product.priceRangeV2.minVariantPrice.currencyCode}
-                        </s-text>
-                      )}
-                      
-                      <s-badge status={product.status === 'ACTIVE' ? 'success' : 'attention'}>
-                        {product.status === 'ACTIVE' ? t("productTag.active") : t("productTag.inactive")}
-                      </s-badge>
-                    </div>
-                  </div>
-                );
-              })}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleProductToggle(product.id)}
+                        />
+                        
+                        {product.featuredImage?.url && (
+                          <img
+                            src={product.featuredImage.url}
+                            alt={product.title}
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              objectFit: "cover",
+                              borderRadius: "6px",
+                            }}
+                          />
+                        )}
+                        
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                            {product.title}
+                          </div>
+                          
+                          {product.priceRangeV2?.minVariantPrice && (
+                            <div style={{ fontSize: "14px", color: "#6d7175" }}>
+                              {product.priceRangeV2.minVariantPrice.amount} {product.priceRangeV2.minVariantPrice.currencyCode}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
-
-      <s-button 
-        slot="secondary-actions" 
-        commandFor={`product-modal-${postId}`}
-        command="--hide"
-        disabled={saving}
-      >
-        {t("productTag.cancel")}
-      </s-button>
-      
-      <s-button
-        slot="primary-action"
-        variant="primary"
-        onClick={handleSave}
-        disabled={saving}
-      >
-        {saving ? t("productTag.saving") : t("productTag.saveButton", { count: selectedProducts.size, plural: selectedProducts.size > 1 ? 's' : '' })}
-      </s-button>
-    </s-modal>
+        
+        <div style={{ padding: "16px", borderTop: "1px solid #e1e3e5", display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+          <button
+            onClick={onClose}
+            disabled={saving}
+            style={{
+              padding: "8px 16px",
+              border: "1px solid #c9cccf",
+              borderRadius: "6px",
+              background: "white",
+              cursor: "pointer"
+            }}
+          >
+            {t("productTag.cancel")}
+          </button>
+          
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{
+              padding: "8px 16px",
+              border: "none",
+              borderRadius: "6px",
+              background: "#005bd3",
+              color: "white",
+              cursor: "pointer"
+            }}
+          >
+            {saving ? t("productTag.saving") : t("productTag.saveButton", { count: selectedProducts.size, plural: selectedProducts.size > 1 ? 's' : '' })}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

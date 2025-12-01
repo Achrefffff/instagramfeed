@@ -60,17 +60,31 @@ export function ConfiguredState({
       const result = await response.json();
 
       if (response.ok) {
-        // Mettre à jour l'état local
+        // Mettre à jour l'état local avec les produits complets
         setTaggedProducts(prev => ({
           ...prev,
           [postId]: result.taggedProducts || []
         }));
-        showToast(result.message || "Produits étiquetés avec succès");
+        
+        // Toast App Bridge
+        if (window.shopify?.toast) {
+          window.shopify.toast.show(result.message || "Produits étiquetés avec succès");
+        } else {
+          showToast(result.message || "Produits étiquetés avec succès");
+        }
       } else {
-        showToast(result.error || "Erreur lors de l'étiquetage", true);
+        if (window.shopify?.toast) {
+          window.shopify.toast.show(result.error || "Erreur lors de l'étiquetage", { isError: true });
+        } else {
+          showToast(result.error || "Erreur lors de l'étiquetage", true);
+        }
       }
     } catch (error) {
-      showToast("Erreur réseau lors de l'étiquetage", true);
+      if (window.shopify?.toast) {
+        window.shopify.toast.show("Erreur réseau lors de l'étiquetage", { isError: true });
+      } else {
+        showToast("Erreur réseau lors de l'étiquetage", true);
+      }
       console.error("Failed to save product tags:", error);
     }
   };
@@ -736,6 +750,17 @@ export function ConfiguredState({
                       onTagClick={handleProductTag}
                       taggedProductsCount={taggedProducts[post.id]?.length || 0}
                     />
+                    
+                    {taggedProducts[post.id]?.length > 0 && (
+                      <div style={{
+                        marginTop: "8px",
+                        fontSize: "11px",
+                        color: "#6d7175",
+                        fontStyle: "italic"
+                      }}>
+                        {t("productTag.taggedWith")}: {taggedProducts[post.id].map(p => p.title).join(", ")}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

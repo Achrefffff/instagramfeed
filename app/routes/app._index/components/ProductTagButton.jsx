@@ -26,34 +26,38 @@ export function ProductTagButton({ postId, onTagClick, taggedProductsCount = 0 }
   };
 
   return (
-    <s-button
-      commandFor={`product-modal-${postId}`}
+    <button
       onClick={handleClick}
       style={{
-        width: "100%",
-      }}
-      title={taggedProductsCount > 0 ? t("productTag.buttonWithCount", { count: taggedProductsCount }) : t("productTag.button")}
-    >
-      <div style={{
         display: "flex",
         alignItems: "center",
         gap: "6px",
+        padding: "8px 12px",
+        backgroundColor: "#fff",
+        border: "1px solid #c9cccf",
+        borderRadius: "6px",
+        cursor: "pointer",
+        fontSize: "12px",
+        fontWeight: "500",
+        color: "#202223",
+        width: "100%",
         justifyContent: "center",
-      }}>
-        <TagIcon />
-        <span>
-          {t("productTag.button")}
-          {taggedProductsCount > 0 && (
-            <span style={{ 
-              marginLeft: "4px", 
-              color: "#005bd3",
-              fontWeight: "600" 
-            }}>
-              ({taggedProductsCount})
-            </span>
-          )}
-        </span>
-      </div>
-    </s-button>
+      }}
+      title={taggedProductsCount > 0 ? t("productTag.buttonWithCount", { count: taggedProductsCount }) : t("productTag.button")}
+    >
+      <TagIcon />
+      <span>
+        {t("productTag.button")}
+        {taggedProductsCount > 0 && (
+          <span style={{ 
+            marginLeft: "4px", 
+            color: "#005bd3",
+            fontWeight: "600" 
+          }}>
+            ({taggedProductsCount})
+          </span>
+        )}
+      </span>
+    </button>
   );
 }

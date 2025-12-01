@@ -63,7 +63,8 @@
     "noProductsStore": "You don't have any products in your store yet.",
     "active": "Active",
     "inactive": "Inactive",
-    "loading": "Loading products"
+    "loading": "Loading products",
+    "taggedWith": "Tagged with"
   },
   "aria": {
     "filterPosts": "Filter posts: {{type}}",
