@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { Modal, TextField, Spinner, EmptyState, Checkbox, Badge, Text } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 
 export function ProductSelectorModal({ 
@@ -68,119 +67,116 @@ export function ProductSelectorModal({
   );
 
   return (
-    <Modal
-      open={isOpen}
-      onClose={onClose}
-      title={t("productTag.modalTitle")}
-      primaryAction={{
-        content: saving ? t("productTag.saving") : t("productTag.saveButton", { count: selectedProducts.size, plural: selectedProducts.size > 1 ? 's' : '' }),
-        onAction: handleSave,
-        disabled: saving,
-      }}
-      secondaryActions={[
-        {
-          content: t("productTag.cancel"),
-          onAction: onClose,
-          disabled: saving,
-        },
-      ]}
+    <s-modal 
+      id={`product-modal-${postId}`}
+      heading={t("productTag.modalTitle")}
       size="large"
     >
-      <Modal.Section>
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <TextField
-            label={t("productTag.searchLabel")}
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder={t("productTag.searchPlaceholder")}
-            clearButton
-            onClearButtonClick={() => setSearchQuery("")}
-          />
+      <s-text-field
+        label={t("productTag.searchLabel")}
+        value={searchQuery}
+        placeholder={t("productTag.searchPlaceholder")}
+        onInput={(e) => setSearchQuery(e.target.value)}
+      />
 
-          {loading ? (
-            <div style={{ 
-              display: "flex", 
-              justifyContent: "center", 
-              padding: "40px" 
-            }}>
-              <Spinner accessibilityLabel={t("productTag.loading")} size="large" />
-            </div>
+      {loading ? (
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "center", 
+          padding: "40px" 
+        }}>
+          <s-spinner size="large" />
+        </div>
+      ) : (
+        <div style={{ maxHeight: "400px", overflowY: "auto" }}>
+          {filteredProducts.length === 0 ? (
+            <s-empty-state heading={t("productTag.noProducts")}>
+              <s-text>
+                {searchQuery 
+                  ? t("productTag.noProductsSearch")
+                  : t("productTag.noProductsStore")
+                }
+              </s-text>
+            </s-empty-state>
           ) : (
-            <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {filteredProducts.length === 0 ? (
-                  <EmptyState
-                    heading={t("productTag.noProducts")}
-                    image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {filteredProducts.map((product) => {
+                const isSelected = selectedProducts.has(product.id);
+                return (
+                  <div
+                    key={product.id}
+                    onClick={() => handleProductToggle(product.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "12px",
+                      border: isSelected ? "2px solid #005bd3" : "1px solid #e1e3e5",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      backgroundColor: isSelected ? "#f0f8ff" : "#fff",
+                      transition: "all 0.2s ease",
+                    }}
                   >
-                    <p>
-                      {searchQuery 
-                        ? t("productTag.noProductsSearch")
-                        : t("productTag.noProductsStore")
-                      }
-                    </p>
-                  </EmptyState>
-                ) : (
-                  filteredProducts.map((product) => {
-                    const isSelected = selectedProducts.has(product.id);
-                    return (
-                      <div
-                        key={product.id}
-                        onClick={() => handleProductToggle(product.id)}
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleProductToggle(product.id)}
+                    />
+                    
+                    {product.featuredImage?.url && (
+                      <img
+                        src={product.featuredImage.url}
+                        alt={product.featuredImage.altText || product.title}
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                          padding: "12px",
-                          border: isSelected ? "2px solid #005bd3" : "1px solid #e1e3e5",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          backgroundColor: isSelected ? "#f0f8ff" : "#fff",
-                          transition: "all 0.2s ease",
+                          width: "50px",
+                          height: "50px",
+                          objectFit: "cover",
+                          borderRadius: "6px",
                         }}
-                      >
-                        <Checkbox
-                          checked={isSelected}
-                          onChange={() => handleProductToggle(product.id)}
-                        />
-                        
-                        {product.featuredImage?.url && (
-                          <img
-                            src={product.featuredImage.url}
-                            alt={product.featuredImage.altText || product.title}
-                            style={{
-                              width: "50px",
-                              height: "50px",
-                              objectFit: "cover",
-                              borderRadius: "6px",
-                            }}
-                          />
-                        )}
-                        
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
-                          <Text variant="bodyMd" fontWeight="semibold">
-                            {product.title}
-                          </Text>
-                          
-                          {product.priceRangeV2?.minVariantPrice && (
-                            <Text variant="bodySm" color="subdued">
-                              {product.priceRangeV2.minVariantPrice.amount} {product.priceRangeV2.minVariantPrice.currencyCode}
-                            </Text>
-                          )}
-                          
-                          <Badge status={product.status === 'ACTIVE' ? 'success' : 'attention'}>
-                            {product.status === 'ACTIVE' ? t("productTag.active") : t("productTag.inactive")}
-                          </Badge>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+                      />
+                    )}
+                    
+                    <div style={{ flex: 1 }}>
+                      <s-text variant="bodyMd" style={{ fontWeight: "600", display: "block" }}>
+                        {product.title}
+                      </s-text>
+                      
+                      {product.priceRangeV2?.minVariantPrice && (
+                        <s-text variant="bodySm" style={{ color: "#6d7175" }}>
+                          {product.priceRangeV2.minVariantPrice.amount} {product.priceRangeV2.minVariantPrice.currencyCode}
+                        </s-text>
+                      )}
+                      
+                      <s-badge status={product.status === 'ACTIVE' ? 'success' : 'attention'}>
+                        {product.status === 'ACTIVE' ? t("productTag.active") : t("productTag.inactive")}
+                      </s-badge>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
-      </Modal.Section>
-    </Modal>
+      )}
+
+      <s-button 
+        slot="secondary-actions" 
+        commandFor={`product-modal-${postId}`}
+        command="--hide"
+        disabled={saving}
+      >
+        {t("productTag.cancel")}
+      </s-button>
+      
+      <s-button
+        slot="primary-action"
+        variant="primary"
+        onClick={handleSave}
+        disabled={saving}
+      >
+        {saving ? t("productTag.saving") : t("productTag.saveButton", { count: selectedProducts.size, plural: selectedProducts.size > 1 ? 's' : '' })}
+      </s-button>
+    </s-modal>
   );
 }

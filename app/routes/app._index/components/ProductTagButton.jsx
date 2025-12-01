@@ -26,41 +26,34 @@ export function ProductTagButton({ postId, onTagClick, taggedProductsCount = 0 }
   };
 
   return (
-    <button
+    <s-button
+      commandFor={`product-modal-${postId}`}
       onClick={handleClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "6px",
-        padding: "6px 10px",
-        backgroundColor: isHovered ? "#f0f0f0" : "#fff",
-        border: "1px solid #c9cccf",
-        borderRadius: "6px",
-        cursor: "pointer",
-        fontSize: "12px",
-        fontWeight: "500",
-        color: "#202223",
-        transition: "all 0.2s ease",
         width: "100%",
-        justifyContent: "center",
       }}
       title={taggedProductsCount > 0 ? t("productTag.buttonWithCount", { count: taggedProductsCount }) : t("productTag.button")}
     >
-      <TagIcon />
-      <span>
-        {t("productTag.button")}
-        {taggedProductsCount > 0 && (
-          <span style={{ 
-            marginLeft: "4px", 
-            color: "#005bd3",
-            fontWeight: "600" 
-          }}>
-            ({taggedProductsCount})
-          </span>
-        )}
-      </span>
-    </button>
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        justifyContent: "center",
+      }}>
+        <TagIcon />
+        <span>
+          {t("productTag.button")}
+          {taggedProductsCount > 0 && (
+            <span style={{ 
+              marginLeft: "4px", 
+              color: "#005bd3",
+              fontWeight: "600" 
+            }}>
+              ({taggedProductsCount})
+            </span>
+          )}
+        </span>
+      </div>
+    </s-button>
   );
 }
