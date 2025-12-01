@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Modal, TextField, Spinner, EmptyState, Checkbox, Badge, Stack, Text } from "@shopify/polaris";
+import { Modal, TextField, Spinner, EmptyState, Checkbox, Badge, Text } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 
 export function ProductSelectorModal({ 
@@ -87,7 +87,7 @@ export function ProductSelectorModal({
       size="large"
     >
       <Modal.Section>
-        <Stack vertical spacing="loose">
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <TextField
             label={t("productTag.searchLabel")}
             value={searchQuery}
@@ -107,7 +107,7 @@ export function ProductSelectorModal({
             </div>
           ) : (
             <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-              <Stack vertical spacing="tight">
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {filteredProducts.length === 0 ? (
                   <EmptyState
                     heading={t("productTag.noProducts")}
@@ -157,7 +157,7 @@ export function ProductSelectorModal({
                           />
                         )}
                         
-                        <Stack vertical spacing="extraTight" distribution="fill">
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
                           <Text variant="bodyMd" fontWeight="semibold">
                             {product.title}
                           </Text>
@@ -171,15 +171,15 @@ export function ProductSelectorModal({
                           <Badge status={product.status === 'ACTIVE' ? 'success' : 'attention'}>
                             {product.status === 'ACTIVE' ? t("productTag.active") : t("productTag.inactive")}
                           </Badge>
-                        </Stack>
+                        </div>
                       </div>
                     );
                   })
                 )}
-              </Stack>
+              </div>
             </div>
           )}
-        </Stack>
+        </div>
       </Modal.Section>
     </Modal>
   );
