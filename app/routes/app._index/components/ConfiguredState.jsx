@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "../../../hooks/useToast";
 import { StatsOverview } from "./StatsOverview";
 import { Toast } from "./Toast";
+import { ProductTagButton } from "./ProductTagButton";
 import { useTranslation } from "react-i18next";
 
 export function ConfiguredState({
@@ -17,7 +18,30 @@ export function ConfiguredState({
   const [postType, setPostType] = useState("all");
   const [selectedPosts, setSelectedPosts] = useState(new Set());
   const [isSaving, setIsSaving] = useState(false);
+  const [taggedProducts, setTaggedProducts] = useState({});
   const { toast, showToast, dismissToast } = useToast();
+
+  // Charger les produits étiquetés au démarrage
+  useEffect(() => {
+    const loadTaggedProducts = async () => {
+      try {
+        const response = await fetch("/api/product-tagging?action=tagged");
+        if (response.ok) {
+          const data = await response.json();
+          setTaggedProducts(data.taggedProducts || {});
+        }
+      } catch (error) {
+        console.error("Failed to load tagged products:", error);
+      }
+    };
+    loadTaggedProducts();
+  }, []);
+
+  const handleProductTag = async (postId) => {
+    // TODO: Ouvrir la modal de sélection de produits
+    console.log("Étiqueter des produits pour le post:", postId);
+    showToast("Fonctionnalité d'étiquetage en cours de développement");
+  };
 
 
   const Stat = ({ label, value }) => (
@@ -291,22 +315,7 @@ export function ConfiguredState({
                         : `${t("app.save")} (${selectedPosts.size})`}
                     </s-button>
                   </div>
-                  <div
-                    onClick={() => {
 
-                      if (selectedPosts.size === 1) {
-                        const postId = Array.from(selectedPosts)[0];
-                        navigate(`/app/products?postId=${postId}`);
-                      } else {
-                        navigate("/app/products");
-                      }
-                    }}
-
-                  >
-                    <s-button>
-                      Lier aux produits ({selectedPosts.size})
-                    </s-button>
-                  </div>
                 </>
               )}
 
@@ -666,22 +675,30 @@ export function ConfiguredState({
                       {post.caption || t("post.noCaption")}
                     </p>
 
-                    <a
-                      href={post.permalink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={t("aria.viewPost", {
-                        username: post.ownerUsername || post.accountUsername,
-                      })}
-                      style={{
-                        fontSize: "12px",
-                        color: "#005bd3",
-                        textDecoration: "none",
-                        fontWeight: "500",
-                      }}
-                    >
-                      {t("post.viewOnInstagram")}
-                    </a>
+                    <div style={{ marginBottom: "12px" }}>
+                      <a
+                        href={post.permalink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={t("aria.viewPost", {
+                          username: post.ownerUsername || post.accountUsername,
+                        })}
+                        style={{
+                          fontSize: "12px",
+                          color: "#005bd3",
+                          textDecoration: "none",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {t("post.viewOnInstagram")}
+                      </a>
+                    </div>
+                    
+                    <ProductTagButton
+                      postId={post.id}
+                      onTagClick={handleProductTag}
+                      taggedProductsCount={taggedProducts[post.id]?.length || 0}
+                    />
                   </div>
                 </div>
               );
