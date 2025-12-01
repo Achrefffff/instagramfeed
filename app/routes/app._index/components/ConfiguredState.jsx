@@ -47,6 +47,11 @@ export function ConfiguredState({
 
   const handleSaveProductTags = async (postId, selectedProductIds) => {
     try {
+      // Si aucun produit sélectionné, effacer les étiquettes
+      if (!selectedProductIds || selectedProductIds.length === 0) {
+        return handleClearProductTags(postId);
+      }
+      
       const response = await fetch("/api/product-tagging", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -60,13 +65,11 @@ export function ConfiguredState({
       const result = await response.json();
 
       if (response.ok) {
-        // Mettre à jour l'état local avec les produits complets
         setTaggedProducts(prev => ({
           ...prev,
           [postId]: result.taggedProducts || []
         }));
         
-        // Toast App Bridge
         if (window.shopify?.toast) {
           window.shopify.toast.show(result.message || "Produits étiquetés avec succès");
         } else {
@@ -86,6 +89,48 @@ export function ConfiguredState({
         showToast("Erreur réseau lors de l'étiquetage", true);
       }
       console.error("Failed to save product tags:", error);
+    }
+  };
+
+  const handleClearProductTags = async (postId) => {
+    try {
+      const response = await fetch("/api/product-tagging", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "clear",
+          postId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setTaggedProducts(prev => {
+          const newState = { ...prev };
+          delete newState[postId];
+          return newState;
+        });
+        
+        if (window.shopify?.toast) {
+          window.shopify.toast.show("Produits désétiquetés avec succès");
+        } else {
+          showToast("Produits désétiquetés avec succès");
+        }
+      } else {
+        if (window.shopify?.toast) {
+          window.shopify.toast.show(result.error || "Erreur lors du désétiquetage", { isError: true });
+        } else {
+          showToast(result.error || "Erreur lors du désétiquetage", true);
+        }
+      }
+    } catch (error) {
+      if (window.shopify?.toast) {
+        window.shopify.toast.show("Erreur réseau lors du désétiquetage", { isError: true });
+      } else {
+        showToast("Erreur réseau lors du désétiquetage", true);
+      }
+      console.error("Failed to clear product tags:", error);
     }
   };
 
@@ -745,11 +790,35 @@ export function ConfiguredState({
                       </a>
                     </div>
                     
-                    <ProductTagButton
-                      postId={post.id}
-                      onTagClick={handleProductTag}
-                      taggedProductsCount={taggedProducts[post.id]?.length || 0}
-                    />
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <ProductTagButton
+                        postId={post.id}
+                        onTagClick={handleProductTag}
+                        taggedProductsCount={taggedProducts[post.id]?.length || 0}
+                      />
+                      
+                      {taggedProducts[post.id]?.length > 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClearProductTags(post.id);
+                          }}
+                          style={{
+                            padding: "8px 12px",
+                            backgroundColor: "#fff",
+                            border: "1px solid #bf0711",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            color: "#bf0711",
+                            fontWeight: "500",
+                          }}
+                          title={t("productTag.clearTags")}
+                        >
+                          {t("productTag.clear")}
+                        </button>
+                      )}
+                    </div>
                     
                     {taggedProducts[post.id]?.length > 0 && (
                       <div style={{

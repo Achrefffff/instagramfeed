@@ -133,20 +133,13 @@ export const productTagging = {
     try {
       const currentTags = await this.getTaggedProducts(admin, shop);
       
-      // Ajouter les nouveaux produits au post
-      if (!currentTags[postId]) {
-        currentTags[postId] = [];
-      }
+      // S'assurer que productIds sont des strings
+      const cleanProductIds = productIds.map(id => typeof id === 'string' ? id : String(id));
       
-      // Éviter les doublons
-      const existingIds = new Set(currentTags[postId]);
-      const newIds = productIds.filter(id => !existingIds.has(id));
+      // Remplacer complètement la liste (pas d'ajout, remplacement)
+      currentTags[postId] = cleanProductIds;
       
-      if (newIds.length > 0) {
-        currentTags[postId] = [...currentTags[postId], ...newIds];
-        await this.saveTaggedProducts(admin, shop, currentTags);
-      }
-
+      await this.saveTaggedProducts(admin, shop, currentTags);
       return currentTags[postId];
     } catch (error) {
       logger.error("Failed to tag products to post", error, { shop, postId });
@@ -179,6 +172,25 @@ export const productTagging = {
       return currentTags[postId] || [];
     } catch (error) {
       logger.error("Failed to untag products from post", error, { shop, postId });
+      throw error;
+    }
+  },
+
+  /**
+   * Efface tous les produits d'un post
+   */
+  async clearProductsFromPost(admin, shop, postId) {
+    try {
+      const currentTags = await this.getTaggedProducts(admin, shop);
+      
+      if (currentTags[postId]) {
+        delete currentTags[postId];
+        await this.saveTaggedProducts(admin, shop, currentTags);
+      }
+      
+      return true;
+    } catch (error) {
+      logger.error("Failed to clear products from post", error, { shop, postId });
       throw error;
     }
   },

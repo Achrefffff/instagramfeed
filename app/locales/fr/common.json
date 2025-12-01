@@ -64,7 +64,9 @@
     "active": "Actif",
     "inactive": "Inactif",
     "loading": "Chargement des produits",
-    "taggedWith": "Étiquetés avec"
+    "taggedWith": "Étiquetés avec",
+    "clear": "Effacer",
+    "clearTags": "Effacer toutes les étiquettes"
   },
   "aria": {
     "filterPosts": "Filtrer les posts : {{type}}",

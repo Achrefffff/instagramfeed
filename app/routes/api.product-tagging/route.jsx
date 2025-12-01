@@ -88,6 +88,22 @@ export const action = async ({ request }) => {
         });
       }
 
+      case "clear": {
+        await productTagging.clearProductsFromPost(admin, shop, postId);
+
+        const duration = Date.now() - startTime;
+        logger.info("Products cleared successfully", {
+          shop,
+          postId,
+          duration,
+        });
+
+        return data({ 
+          success: true, 
+          message: "Produits désétiquetés avec succès"
+        });
+      }
+
       default:
         throw new ValidationError(`Action non reconnue: ${actionType}`);
     }

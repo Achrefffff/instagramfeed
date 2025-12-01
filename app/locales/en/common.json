@@ -64,7 +64,9 @@
     "active": "Active",
     "inactive": "Inactive",
     "loading": "Loading products",
-    "taggedWith": "Tagged with"
+    "taggedWith": "Tagged with",
+    "clear": "Clear",
+    "clearTags": "Clear all tags"
   },
   "aria": {
     "filterPosts": "Filter posts: {{type}}",
