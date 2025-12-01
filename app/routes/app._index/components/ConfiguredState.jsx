@@ -32,6 +32,7 @@ export function ConfiguredState({
       } else {
         newSet.add(postId);
       }
+      console.log("📝 DEBUG: Posts sélectionnés:", Array.from(newSet));
       return newSet;
     });
   };
@@ -279,14 +280,35 @@ export function ConfiguredState({
             </div>
 
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              {console.log("🔍 DEBUG: selectedPosts.size =", selectedPosts.size)}
               {selectedPosts.size > 0 && (
-                <div onClick={saveSelection}>
-                  <s-button variant="primary" disabled={isSaving}>
-                    {isSaving
-                      ? t("app.saving")
-                      : `${t("app.save")} (${selectedPosts.size})`}
-                  </s-button>
-                </div>
+                <>
+                  {console.log("✅ DEBUG: Affichage des boutons car selectedPosts.size > 0")}
+                  <div onClick={saveSelection}>
+                    <s-button variant="primary" disabled={isSaving}>
+                      {isSaving
+                        ? t("app.saving")
+                        : `${t("app.save")} (${selectedPosts.size})`}
+                    </s-button>
+                  </div>
+                  <div
+                    onClick={() => {
+                      console.log("🔗 DEBUG: Clic sur bouton Lier aux produits");
+                      if (selectedPosts.size === 1) {
+                        const postId = Array.from(selectedPosts)[0];
+                        navigate(`/app/products?postId=${postId}`);
+                      } else {
+                        navigate("/app/products");
+                      }
+                    }}
+                    style={{ backgroundColor: "red", padding: "10px" }}
+                  >
+                    {console.log("🎯 DEBUG: Rendu du bouton Lier aux produits")}
+                    <s-button>
+                      Lier aux produits ({selectedPosts.size})
+                    </s-button>
+                  </div>
+                </>
               )}
 
               <div

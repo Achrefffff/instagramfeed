@@ -63,6 +63,7 @@ model InstagramPost {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @default(now()) @updatedAt
 
+
   @@index([shop, username])
   @@index([shop, timestamp])
   @@index([shop, likeCount])
@@ -71,3 +72,5 @@ model InstagramPost {
   @@index([shop, reach])
   @@index([shop, saved])
 }
+
+
