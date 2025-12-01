@@ -1,5 +1,5 @@
 import { Form, useNavigate } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "../../../hooks/useToast";
 import { StatsOverview } from "./StatsOverview";
 import { Toast } from "./Toast";
@@ -18,6 +18,15 @@ export function ConfiguredState({
   const [selectedPosts, setSelectedPosts] = useState(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const { toast, showToast, dismissToast } = useToast();
+
+  // Debug logs
+  useEffect(() => {
+    console.log("🔍 DEBUG: selectedPosts.size =", selectedPosts.size);
+    if (selectedPosts.size > 0) {
+      console.log("✅ DEBUG: Affichage des boutons car selectedPosts.size > 0");
+      console.log("🎯 DEBUG: Rendu du bouton Lier aux produits");
+    }
+  }, [selectedPosts.size]);
   const Stat = ({ label, value }) => (
     <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
       <span>{label}</span>
@@ -280,10 +289,8 @@ export function ConfiguredState({
             </div>
 
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              {console.log("🔍 DEBUG: selectedPosts.size =", selectedPosts.size)}
               {selectedPosts.size > 0 && (
                 <>
-                  {console.log("✅ DEBUG: Affichage des boutons car selectedPosts.size > 0")}
                   <div onClick={saveSelection}>
                     <s-button variant="primary" disabled={isSaving}>
                       {isSaving
@@ -303,7 +310,6 @@ export function ConfiguredState({
                     }}
                     style={{ backgroundColor: "red", padding: "10px" }}
                   >
-                    {console.log("🎯 DEBUG: Rendu du bouton Lier aux produits")}
                     <s-button>
                       Lier aux produits ({selectedPosts.size})
                     </s-button>
