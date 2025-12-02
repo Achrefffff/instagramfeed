@@ -1,8 +1,10 @@
 import { Outlet, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import { AppProvider } from "@shopify/shopify-app-react-router/react";
+import { AppProvider as ShopifyAppProvider } from "@shopify/shopify-app-react-router/react";
+import { AppProvider } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { useTranslation } from "react-i18next";
+import enTranslations from "@shopify/polaris/locales/en.json";
 
 export const loader = async ({ request }) => {
   await authenticate.admin(request);
@@ -16,13 +18,17 @@ export default function App() {
   const { i18n } = useTranslation();
 
   return (
-    <AppProvider embedded apiKey={apiKey} i18n={i18n.language}>
-      <s-app-nav>
-        <s-link href="/app" rel="home">Home</s-link>
-        <s-link href="/app/additional">Additional page</s-link>
-      </s-app-nav>
-      <Outlet />
-    </AppProvider>
+    <ShopifyAppProvider embedded apiKey={apiKey} i18n={i18n.language}>
+      <AppProvider i18n={enTranslations}>
+        <s-app-nav>
+          <s-link href="/app" rel="home">
+            Home
+          </s-link>
+          <s-link href="/app/additional">Additional page</s-link>
+        </s-app-nav>
+        <Outlet />
+      </AppProvider>
+    </ShopifyAppProvider>
   );
 }
 
