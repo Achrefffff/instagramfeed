@@ -11,7 +11,7 @@ import {
 import {
   HeartIcon,
   ChatIcon,
-  EyeIcon,
+  ViewIcon,
   BookmarkIcon,
 } from "@shopify/polaris-icons";
 import { useTranslation } from "react-i18next";
@@ -188,7 +188,7 @@ export function PostCard({
           )}
           {post.impressions && (
             <InlineStack gap="100" blockAlign="center">
-              <Icon source={EyeIcon} tone="base" />
+              <Icon source={ViewIcon} tone="base" />
               <Text as="span" variant="bodySm">
                 {post.impressions}
               </Text>
