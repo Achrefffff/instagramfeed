@@ -110,7 +110,6 @@ export function ProductSelectorModal({
     >
       <Modal.Section>
         <BlockStack gap="medium">
-          {/* Search Field */}
           <TextField
             type="text"
             label={t("productTag.searchPlaceholder")}
@@ -122,14 +121,12 @@ export function ProductSelectorModal({
             autoComplete="off"
           />
 
-          {/* Loading State */}
           {loading && (
             <Box display="flex" justifyContent="center" padding="large">
               <Spinner accessibilityLabel={t("app.loading")} />
             </Box>
           )}
 
-          {/* Empty State */}
           {!loading && filteredProducts.length === 0 && (
             <Banner tone="info">
               <Text as="p">
@@ -140,7 +137,6 @@ export function ProductSelectorModal({
             </Banner>
           )}
 
-          {/* Products List */}
           {!loading && filteredProducts.length > 0 && (
             <BlockStack gap="small">
               {filteredProducts.map((product) => {
