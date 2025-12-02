@@ -156,34 +156,33 @@
     console.log('Product tags type:', typeof {{ product_tags | json }});
     console.log('======================');
     
-    // Test avec des données factices
-    const testTags = {
-      '{{ instagram_data.posts[0].id }}': [
+    // Test avec des données factices pour TOUS les posts
+    const posts = {{ instagram_data.posts | json }};
+    const testTags = {};
+    
+    // Ajouter un produit test à chaque post
+    posts.forEach(post => {
+      testTags[post.id] = [
         {
-          id: 'test-1',
-          title: 'Produit Test',
+          id: 'test-' + post.id,
+          title: 'Produit Test pour ' + post.id.slice(-4),
           handle: 'produit-test',
           price: '29.99',
           currency: 'EUR',
           image: null
         }
-      ]
-    };
+      ];
+    });
     
     (function() {
       if (typeof window.initInstagramLightbox === 'function') {
-        // Utiliser les vraies données ou les données de test
-        const realTags = {{ product_tags | json }};
-        const tagsToUse = realTags && Object.keys(realTags).length > 0 ? realTags : testTags;
-        console.log('Using tags:', tagsToUse);
-        window.initInstagramLightbox({{ instagram_data.posts | json }}, tagsToUse);
+        console.log('Using test tags for all posts:', testTags);
+        window.initInstagramLightbox(posts, testTags);
       } else {
         document.addEventListener('DOMContentLoaded', function() {
           if (typeof window.initInstagramLightbox === 'function') {
-            const realTags = {{ product_tags | json }};
-            const tagsToUse = realTags && Object.keys(realTags).length > 0 ? realTags : testTags;
-            console.log('Using tags (DOM ready):', tagsToUse);
-            window.initInstagramLightbox({{ instagram_data.posts | json }}, tagsToUse);
+            console.log('Using test tags for all posts (DOM ready):', testTags);
+            window.initInstagramLightbox(posts, testTags);
           }
         });
       }

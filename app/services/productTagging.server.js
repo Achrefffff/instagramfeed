@@ -134,16 +134,18 @@ export const productTagging = {
     try {
       const currentTags = await this.getTaggedProducts(admin, shop);
       
-      // S'assurer que productIds sont des strings
-      const cleanProductIds = productIds.map(id => typeof id === 'string' ? id : String(id));
+      // Nettoyer et filtrer les IDs pour ne garder que les strings valides
+      const cleanProductIds = productIds
+        .filter(id => typeof id === 'string' && id.includes('gid://shopify/Product/'))
+        .map(id => String(id));
       
       // Sauvegarder seulement les IDs (comme avant)
       currentTags[postId] = cleanProductIds;
       
       await this.saveTaggedProducts(admin, shop, currentTags);
       
-      // Sauvegarder aussi les détails pour le thème
-      await this.saveProductDetailsForTheme(admin, shop);
+      // Sauvegarder aussi les détails pour le thème (désactivé temporairement)
+      // await this.saveProductDetailsForTheme(admin, shop);
       
       return currentTags[postId];
     } catch (error) {
@@ -192,8 +194,8 @@ export const productTagging = {
         delete currentTags[postId];
         await this.saveTaggedProducts(admin, shop, currentTags);
         
-        // Mettre à jour aussi les détails pour le thème
-        await this.saveProductDetailsForTheme(admin, shop);
+        // Mettre à jour aussi les détails pour le thème (désactivé temporairement)
+        // await this.saveProductDetailsForTheme(admin, shop);
       }
       
       return true;
@@ -240,9 +242,13 @@ export const productTagging = {
       
       for (const productId of productIds) {
         try {
-          // S'assurer que l'ID est une string valide
-          const cleanId = typeof productId === 'string' ? productId : String(productId);
-          console.log('Fetching product with ID:', cleanId);
+          // Ignorer les objets et ne traiter que les strings d'ID valides
+          if (typeof productId !== 'string' || !productId.includes('gid://shopify/Product/')) {
+            console.log('Skipping invalid product ID:', productId);
+            continue;
+          }
+          
+          console.log('Fetching product with ID:', productId);
           
           const response = await admin.graphql(
             `#graphql
@@ -265,7 +271,7 @@ export const productTagging = {
               }
             }`,
             {
-              variables: { id: cleanId },
+              variables: { id: productId },
             }
           );
 
