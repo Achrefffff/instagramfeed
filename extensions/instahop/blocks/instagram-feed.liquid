@@ -148,57 +148,17 @@
       });
     };
 
-    // Debug: Afficher les données
-    console.log('=== DEBUG LIGHTBOX ===');
-    console.log('Instagram posts:', {{ instagram_data.posts | json }});
-    console.log('Product tags raw:', '{{ product_tags }}');
-    console.log('Product tags exists:', {{ product_tags != null }});
-    console.log('Shop metafields custom:', '{{ shop.metafields.custom }}');
-    console.log('All shop metafields keys:', Object.keys({{ shop.metafields | json }}));
-    console.log('======================');
-    
-    const posts = {{ instagram_data.posts | json }};
-    
-    // Récupérer les vraies données via AJAX
-    async function loadProductTags() {
-      try {
-        const response = await fetch('https://instagramfeed-jz6z.onrender.com/api/theme/product-tags?shop=sardinasi.myshopify.com');
-        const productTags = await response.json();
-        console.log('Product tags loaded via AJAX:', productTags);
-        
-        if (typeof window.initInstagramLightbox === 'function') {
-          window.initInstagramLightbox(posts, productTags);
-        }
-      } catch (error) {
-        console.error('Failed to load product tags:', error);
-        
-        // Fallback avec données de test
-        const testTags = {};
-        posts.forEach(post => {
-          testTags[post.id] = [
-            {
-              id: 'test-' + post.id,
-              title: 'Produit Test (Fallback)',
-              handle: 'produit-test',
-              price: '29.99',
-              currency: 'EUR',
-              image: null
-            }
-          ];
+    (function() {
+      if (typeof window.initInstagramLightbox === 'function') {
+        window.initInstagramLightbox({{ instagram_data.posts | json }}, {{ product_tags | json }});
+      } else {
+        document.addEventListener('DOMContentLoaded', function() {
+          if (typeof window.initInstagramLightbox === 'function') {
+            window.initInstagramLightbox({{ instagram_data.posts | json }}, {{ product_tags | json }});
+          }
         });
-        
-        if (typeof window.initInstagramLightbox === 'function') {
-          window.initInstagramLightbox(posts, testTags);
-        }
       }
-    }
-    
-    // Charger les données
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', loadProductTags);
-    } else {
-      loadProductTags();
-    }
+    })();
   </script>
 {% else %}
   <div style="padding: 2rem; text-align: center; color: #666;">

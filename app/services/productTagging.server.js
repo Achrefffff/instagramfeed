@@ -144,8 +144,8 @@ export const productTagging = {
       
       await this.saveTaggedProducts(admin, shop, currentTags);
       
-      // Sauvegarder aussi les détails pour le thème (désactivé temporairement)
-      // await this.saveProductDetailsForTheme(admin, shop);
+      // Sauvegarder aussi les détails pour le thème
+      await this.saveProductDetailsForTheme(admin, shop);
       
       return currentTags[postId];
     } catch (error) {
@@ -194,8 +194,8 @@ export const productTagging = {
         delete currentTags[postId];
         await this.saveTaggedProducts(admin, shop, currentTags);
         
-        // Mettre à jour aussi les détails pour le thème (désactivé temporairement)
-        // await this.saveProductDetailsForTheme(admin, shop);
+        // Mettre à jour aussi les détails pour le thème
+        await this.saveProductDetailsForTheme(admin, shop);
       }
       
       return true;
@@ -312,8 +312,15 @@ export const productTagging = {
       // Pour chaque post, récupérer les détails des produits
       for (const [postId, productIds] of Object.entries(taggedProductIds)) {
         if (productIds && productIds.length > 0) {
-          const productDetails = await this.getProductsByIds(admin, productIds);
-          productDetailsForTheme[postId] = productDetails;
+          // Filtrer pour ne garder que les IDs valides (strings)
+          const validIds = productIds.filter(id => 
+            typeof id === 'string' && id.includes('gid://shopify/Product/')
+          );
+          
+          if (validIds.length > 0) {
+            const productDetails = await this.getProductsByIds(admin, validIds);
+            productDetailsForTheme[postId] = productDetails;
+          }
         }
       }
       
