@@ -2,6 +2,7 @@ import { logger } from "../utils/logger.server.js";
 
 const METAFIELD_NAMESPACE = "custom";
 const METAFIELD_KEY = "instagram_tagged_products";
+const METAFIELD_KEY_DETAILS = "instagram_product_tags"; // Pour le thème
 
 export const productTagging = {
   /**
@@ -136,13 +137,14 @@ export const productTagging = {
       // S'assurer que productIds sont des strings
       const cleanProductIds = productIds.map(id => typeof id === 'string' ? id : String(id));
       
-      // Récupérer les détails complets des produits
-      const productDetails = await this.getProductsByIds(admin, cleanProductIds);
-      
-      // Sauvegarder les détails complets au lieu des IDs
-      currentTags[postId] = productDetails;
+      // Sauvegarder seulement les IDs (comme avant)
+      currentTags[postId] = cleanProductIds;
       
       await this.saveTaggedProducts(admin, shop, currentTags);
+      
+      // Sauvegarder aussi les détails pour le thème
+      await this.saveProductDetailsForTheme(admin, shop);
+      
       return currentTags[postId];
     } catch (error) {
       logger.error("Failed to tag products to post", error, { shop, postId });
@@ -189,6 +191,9 @@ export const productTagging = {
       if (currentTags[postId]) {
         delete currentTags[postId];
         await this.saveTaggedProducts(admin, shop, currentTags);
+        
+        // Mettre à jour aussi les détails pour le thème
+        await this.saveProductDetailsForTheme(admin, shop);
       }
       
       return true;
@@ -235,6 +240,10 @@ export const productTagging = {
       
       for (const productId of productIds) {
         try {
+          // S'assurer que l'ID est une string valide
+          const cleanId = typeof productId === 'string' ? productId : String(productId);
+          console.log('Fetching product with ID:', cleanId);
+          
           const response = await admin.graphql(
             `#graphql
             query getProductById($id: ID!) {
@@ -256,7 +265,7 @@ export const productTagging = {
               }
             }`,
             {
-              variables: { id: productId },
+              variables: { id: cleanId },
             }
           );
 
@@ -283,6 +292,79 @@ export const productTagging = {
     } catch (error) {
       logger.error("Failed to get products by IDs", error);
       return [];
+    }
+  },
+
+  /**
+   * Sauvegarde les détails des produits pour le thème
+   */
+  async saveProductDetailsForTheme(admin, shop) {
+    try {
+      const taggedProductIds = await this.getTaggedProducts(admin, shop);
+      const productDetailsForTheme = {};
+      
+      // Pour chaque post, récupérer les détails des produits
+      for (const [postId, productIds] of Object.entries(taggedProductIds)) {
+        if (productIds && productIds.length > 0) {
+          const productDetails = await this.getProductsByIds(admin, productIds);
+          productDetailsForTheme[postId] = productDetails;
+        }
+      }
+      
+      // Récupérer l'ID du shop
+      const shopResponse = await admin.graphql(
+        `#graphql
+        query {
+          shop {
+            id
+          }
+        }`
+      );
+
+      const shopData = await shopResponse.json();
+      const shopId = shopData.data.shop.id;
+
+      // Sauvegarder dans un metafield séparé
+      const response = await admin.graphql(
+        `#graphql
+        mutation CreateMetafield($metafields: [MetafieldsSetInput!]!) {
+          metafieldsSet(metafields: $metafields) {
+            metafields {
+              id
+              namespace
+              key
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }`,
+        {
+          variables: {
+            metafields: [
+              {
+                namespace: METAFIELD_NAMESPACE,
+                key: METAFIELD_KEY_DETAILS,
+                type: "json",
+                value: JSON.stringify(productDetailsForTheme),
+                ownerId: shopId,
+              },
+            ],
+          },
+        }
+      );
+
+      const data = await response.json();
+      
+      if (data.data?.metafieldsSet?.userErrors?.length > 0) {
+        throw new Error(data.data.metafieldsSet.userErrors[0].message);
+      }
+
+      return data.data?.metafieldsSet?.metafields[0];
+    } catch (error) {
+      logger.error("Failed to save product details for theme", error, { shop });
+      // Ne pas faire échouer le processus principal
     }
   },
 

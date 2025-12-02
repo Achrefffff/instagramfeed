@@ -827,7 +827,7 @@ export function ConfiguredState({
                         color: "#6d7175",
                         fontStyle: "italic"
                       }}>
-                        {t("productTag.taggedWith")}: {taggedProducts[post.id].map(p => p.title).join(", ")}
+                        {t("productTag.taggedWith")}: {taggedProducts[post.id].map(p => p.title || p.id).join(", ")}
                       </div>
                     )}
                   </div>
@@ -852,7 +852,7 @@ export function ConfiguredState({
         onClose={handleCloseModal}
         onSave={handleSaveProductTags}
         postId={currentPostId}
-        currentlyTaggedProducts={currentPostId ? (taggedProducts[currentPostId]?.map(p => p.id) || []) : []}
+        currentlyTaggedProducts={currentPostId ? (taggedProducts[currentPostId]?.map(p => typeof p === 'string' ? p : p.id) || []) : []}
       />
     </>
   );

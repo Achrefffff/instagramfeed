@@ -1,6 +1,6 @@
 {% comment %}theme-check-disable RemoteAsset{% endcomment %}
 {% assign instagram_data = shop.metafields.custom.instagram_selected_posts.value %}
-{% assign product_tags = shop.metafields.custom.instagram_tagged_products.value %}
+{% assign product_tags = shop.metafields.custom.instagram_product_tags.value %}
 
 {% if instagram_data and instagram_data.posts %}
   {% if block.settings.layout == 'carousel' %}
