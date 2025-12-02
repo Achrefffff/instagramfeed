@@ -3,7 +3,6 @@ import {
   BlockStack,
   InlineStack,
   Checkbox,
-  Thumbnail,
   Button,
   Badge,
   Text,
@@ -28,7 +27,7 @@ export function PostCard({
 
   const taggedCount = taggedProducts?.[post.id]?.length || 0;
 
-  // Helper to render media using Polaris Thumbnail for images
+  // Helper to render media using consistent sizing
   const renderMedia = () => {
     if (post.mediaType === "VIDEO") {
       return (
@@ -44,12 +43,13 @@ export function PostCard({
       );
     }
 
-    // For carousel and images use Thumbnail for consistent sizing
+    // For carousel and images use img with full height
     return (
-      <Thumbnail
-        source={post.mediaUrl}
+      <img
+        src={post.mediaUrl}
         alt={post.caption || "Instagram post"}
-        size="large"
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        loading="lazy"
       />
     );
   };
@@ -77,12 +77,35 @@ export function PostCard({
           />
         </InlineStack>
 
-        <div style={{ width: "100%", minHeight: 220 }}>{renderMedia()}</div>
+        <div
+          style={{
+            width: "100%",
+            minHeight: 320,
+            backgroundColor: "#f5f5f5",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {renderMedia()}
+        </div>
 
         {taggedCount > 0 && (
-          <Badge status="info">
-            {t("productTag.taggedWith")} {taggedCount}
-          </Badge>
+          <Box>
+            <Badge status="info">
+              {taggedCount} {t("productTag.taggedWith")}
+            </Badge>
+            <Text
+              as="p"
+              variant="bodySm"
+              tone="subdued"
+              style={{ marginTop: "6px" }}
+            >
+              {taggedProducts[post.id]
+                ?.map((p) => p.title || p.id)
+                .join(", ") || ""}
+            </Text>
+          </Box>
         )}
 
         <Text as="p" variant="bodySm">
@@ -103,7 +126,7 @@ export function PostCard({
                 onProductTag(post.id);
               }}
             >
-              {t("productTag.tag")}
+              {t("productTag.button")}
             </Button>
 
             {taggedCount > 0 && (
