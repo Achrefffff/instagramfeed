@@ -1,6 +1,6 @@
 {% comment %}theme-check-disable RemoteAsset{% endcomment %}
 {% assign instagram_data = shop.metafields.custom.instagram_selected_posts.value %}
-{% assign product_tags = shop.metafields.custom.instagram_product_tags.value %}
+{% assign product_tags = shop.metafields.custom.instagram_tagged_products.value %}
 
 {% if instagram_data and instagram_data.posts %}
   {% if block.settings.layout == 'carousel' %}
@@ -148,6 +148,10 @@
       });
     };
 
+    // Debug: Afficher les données
+    console.log('Instagram posts:', {{ instagram_data.posts | json }});
+    console.log('Product tags:', {{ product_tags | json }});
+    
     (function() {
       if (typeof window.initInstagramLightbox === 'function') {
         window.initInstagramLightbox({{ instagram_data.posts | json }}, {{ product_tags | json }});

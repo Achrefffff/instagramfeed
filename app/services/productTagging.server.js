@@ -136,8 +136,11 @@ export const productTagging = {
       // S'assurer que productIds sont des strings
       const cleanProductIds = productIds.map(id => typeof id === 'string' ? id : String(id));
       
-      // Remplacer complètement la liste (pas d'ajout, remplacement)
-      currentTags[postId] = cleanProductIds;
+      // Récupérer les détails complets des produits
+      const productDetails = await this.getProductsByIds(admin, cleanProductIds);
+      
+      // Sauvegarder les détails complets au lieu des IDs
+      currentTags[postId] = productDetails;
       
       await this.saveTaggedProducts(admin, shop, currentTags);
       return currentTags[postId];
@@ -259,7 +262,16 @@ export const productTagging = {
 
           const data = await response.json();
           if (data.data?.product) {
-            products.push(data.data.product);
+            const product = data.data.product;
+            // Formater pour le thème avec les données nécessaires
+            products.push({
+              id: product.id,
+              title: product.title,
+              handle: product.handle,
+              price: product.priceRangeV2?.minVariantPrice?.amount || '0',
+              currency: product.priceRangeV2?.minVariantPrice?.currencyCode || 'EUR',
+              image: product.featuredImage?.url || null
+            });
           }
         } catch (error) {
           logger.error(`Failed to get product ${productId}`, error);

@@ -4,6 +4,8 @@ window.currentIndex = 0;
 window.currentCarouselIndex = 0;
 
 window.initInstagramLightbox = function(posts, tags) {
+  console.log('Initializing lightbox with posts:', posts);
+  console.log('Initializing lightbox with tags:', tags);
   window.instagramPosts = posts;
   window.productTags = tags || {};
 };
@@ -142,18 +144,26 @@ function updateLightbox() {
   
   // Afficher les produits taggés
   const productsContainer = document.getElementById('lightbox-products');
+  console.log('Products container:', productsContainer);
+  console.log('All product tags:', window.productTags);
+  console.log('Post ID:', post.id);
+  
   if (productsContainer) {
     const taggedProducts = window.productTags[post.id];
+    console.log('Tagged products for post:', taggedProducts);
+    
     if (taggedProducts && taggedProducts.length > 0) {
       let productsHTML = '<h4 style="margin: 16px 0 8px 0; font-size: 14px; font-weight: 600; color: #262626;">Produits associés</h4>';
       productsHTML += '<div class="tagged-products-list">';
       
       taggedProducts.forEach(product => {
+        const price = product.price && product.currency ? `${product.price} ${product.currency}` : 'Prix non disponible';
         productsHTML += `
           <div class="tagged-product-item">
+            ${product.image ? `<img src="${product.image}" alt="${product.title}" class="product-image">` : ''}
             <div class="product-info">
               <h5 class="product-title">${product.title}</h5>
-              <p class="product-price">${product.price || 'Prix non disponible'}</p>
+              <p class="product-price">${price}</p>
             </div>
             <a href="/products/${product.handle}" target="_blank" class="product-link">Voir le produit</a>
           </div>
@@ -163,8 +173,11 @@ function updateLightbox() {
       productsHTML += '</div>';
       productsContainer.innerHTML = productsHTML;
     } else {
+      console.log('No tagged products found for this post');
       productsContainer.innerHTML = '';
     }
+  } else {
+    console.error('Products container not found!');
   }
 }
 
