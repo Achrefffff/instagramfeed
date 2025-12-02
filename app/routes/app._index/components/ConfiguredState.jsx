@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { useToast } from "../../../hooks/useToast";
 import { StatsOverview } from "./StatsOverview";
 import { Toast } from "./Toast";
-import { ProductTagButton } from "./ProductTagButton";
 import { ProductSelectorModal } from "./ProductSelectorModal";
+import { PostCard } from "./PostCard";
+import { InlineGrid } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 
 export function ConfiguredState({
@@ -51,7 +52,7 @@ export function ConfiguredState({
       if (!selectedProductIds || selectedProductIds.length === 0) {
         return handleClearProductTags(postId);
       }
-      
+
       const response = await fetch("/api/product-tagging", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -65,26 +66,33 @@ export function ConfiguredState({
       const result = await response.json();
 
       if (response.ok) {
-        setTaggedProducts(prev => ({
+        setTaggedProducts((prev) => ({
           ...prev,
-          [postId]: result.taggedProducts || []
+          [postId]: result.taggedProducts || [],
         }));
-        
+
         if (window.shopify?.toast) {
-          window.shopify.toast.show(result.message || "Produits étiquetés avec succès");
+          window.shopify.toast.show(
+            result.message || "Produits étiquetés avec succès",
+          );
         } else {
           showToast(result.message || "Produits étiquetés avec succès");
         }
       } else {
         if (window.shopify?.toast) {
-          window.shopify.toast.show(result.error || "Erreur lors de l'étiquetage", { isError: true });
+          window.shopify.toast.show(
+            result.error || "Erreur lors de l'étiquetage",
+            { isError: true },
+          );
         } else {
           showToast(result.error || "Erreur lors de l'étiquetage", true);
         }
       }
     } catch (error) {
       if (window.shopify?.toast) {
-        window.shopify.toast.show("Erreur réseau lors de l'étiquetage", { isError: true });
+        window.shopify.toast.show("Erreur réseau lors de l'étiquetage", {
+          isError: true,
+        });
       } else {
         showToast("Erreur réseau lors de l'étiquetage", true);
       }
@@ -106,12 +114,12 @@ export function ConfiguredState({
       const result = await response.json();
 
       if (response.ok) {
-        setTaggedProducts(prev => {
+        setTaggedProducts((prev) => {
           const newState = { ...prev };
           delete newState[postId];
           return newState;
         });
-        
+
         if (window.shopify?.toast) {
           window.shopify.toast.show("Produits désétiquetés avec succès");
         } else {
@@ -119,14 +127,19 @@ export function ConfiguredState({
         }
       } else {
         if (window.shopify?.toast) {
-          window.shopify.toast.show(result.error || "Erreur lors du désétiquetage", { isError: true });
+          window.shopify.toast.show(
+            result.error || "Erreur lors du désétiquetage",
+            { isError: true },
+          );
         } else {
           showToast(result.error || "Erreur lors du désétiquetage", true);
         }
       }
     } catch (error) {
       if (window.shopify?.toast) {
-        window.shopify.toast.show("Erreur réseau lors du désétiquetage", { isError: true });
+        window.shopify.toast.show("Erreur réseau lors du désétiquetage", {
+          isError: true,
+        });
       } else {
         showToast("Erreur réseau lors du désétiquetage", true);
       }
@@ -138,7 +151,6 @@ export function ConfiguredState({
     setModalOpen(false);
     setCurrentPostId(null);
   };
-
 
   const Stat = ({ label, value }) => (
     <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -411,7 +423,6 @@ export function ConfiguredState({
                         : `${t("app.save")} (${selectedPosts.size})`}
                     </s-button>
                   </div>
-
                 </>
               )}
 
@@ -450,391 +461,22 @@ export function ConfiguredState({
             </div>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-              gap: "16px",
-            }}
-          >
-            {filteredPosts.map((post, index) => {
+          <InlineGrid columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 4 }} gap="400">
+            {filteredPosts.map((post) => {
               const isSelected = selectedPosts.has(post.id);
-              const isAboveFold = index < 3;
               return (
-                <div
+                <PostCard
                   key={`${post.configId}-${post.id}`}
-                  role="checkbox"
-                  aria-checked={isSelected}
-                  aria-label={t("aria.postCheckbox", {
-                    username: post.ownerUsername || post.accountUsername,
-                    caption: post.caption
-                      ? post.caption.substring(0, 50)
-                      : t("post.noCaption"),
-                  })}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      togglePostSelection(post.id);
-                    }
-                  }}
-                  style={{
-                    border: isSelected
-                      ? "2px solid #005bd3"
-                      : "1px solid #e1e3e5",
-                    borderRadius: "8px",
-                    overflow: "hidden",
-                    backgroundColor: "#fff",
-                    position: "relative",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => togglePostSelection(post.id)}
-                >
-                  {post.mediaType === "IMAGE" ||
-                  post.mediaType === "CAROUSEL_ALBUM" ? (
-                    <img
-                      src={post.mediaUrl}
-                      alt={
-                        post.caption
-                          ? t("aria.postImage", {
-                              caption: post.caption.substring(0, 100),
-                            })
-                          : t("aria.postCheckbox", {
-                              username:
-                                post.ownerUsername || post.accountUsername,
-                              caption: "",
-                            })
-                      }
-                      style={{
-                        width: "100%",
-                        height: "200px",
-                        objectFit: "cover",
-                        display: "block",
-                      }}
-                      loading={isAboveFold ? "eager" : "lazy"}
-                      decoding="async"
-                      fetchpriority={isAboveFold ? "high" : "auto"}
-                    />
-                  ) : post.mediaType === "VIDEO" ? (
-                    <video
-                      src={post.mediaUrl}
-                      aria-label={t("aria.postVideo", {
-                        username: post.ownerUsername || post.accountUsername,
-                      })}
-                      style={{
-                        width: "100%",
-                        height: "200px",
-                        objectFit: "cover",
-                      }}
-                      controls
-                      preload="metadata"
-                    />
-                  ) : null}
-
-                  <div style={{ padding: "12px" }}>
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "8px",
-                        right: "8px",
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "4px",
-                        backgroundColor: isSelected ? "#005bd3" : "#fff",
-                        border: isSelected ? "none" : "2px solid #c9cccf",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "16px",
-                        color: "#fff",
-                        fontWeight: "bold",
-                        zIndex: 10,
-                      }}
-                    >
-                      {isSelected && "✓"}
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <s-text
-                          variant="bodySm"
-                          style={{ color: "#6d7175", fontWeight: "500" }}
-                        >
-                          @{post.ownerUsername || post.accountUsername}
-                        </s-text>
-                        {post.isTagged && (
-                          <span
-                            style={{
-                              fontSize: "10px",
-                              padding: "2px 6px",
-                              backgroundColor: "#e3f2fd",
-                              color: "#1976d2",
-                              borderRadius: "4px",
-                              fontWeight: "600",
-                            }}
-                          >
-                            {t("post.tagged")}
-                          </span>
-                        )}
-                      </div>
-                      <s-text variant="bodySm" style={{ color: "#8c9196" }}>
-                        {new Date(post.timestamp).toLocaleDateString("fr-FR")}
-                      </s-text>
-                    </div>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "8px",
-                        marginBottom: "8px",
-                        fontSize: "11px",
-                        color: "#6d7175",
-                      }}
-                    >
-                      {post.likeCount > 0 && (
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            style={{ width: "14px", height: "14px" }}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
-                            />
-                          </svg>
-                          {post.likeCount}
-                        </span>
-                      )}
-                      {post.commentsCount > 0 && (
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            style={{ width: "14px", height: "14px" }}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"
-                            />
-                          </svg>
-                          {post.commentsCount}
-                        </span>
-                      )}
-                      {post.impressions > 0 && (
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            style={{ width: "14px", height: "14px" }}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
-                            />
-                          </svg>
-                          {post.impressions.toLocaleString()}
-                        </span>
-                      )}
-                      {post.reach > 0 && (
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            style={{ width: "14px", height: "14px" }}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                            />
-                          </svg>
-                          {post.reach.toLocaleString()}
-                        </span>
-                      )}
-                      {post.saved > 0 && (
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            style={{ width: "14px", height: "14px" }}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"
-                            />
-                          </svg>
-                          {post.saved}
-                        </span>
-                      )}
-                    </div>
-
-                    {post.hashtags && post.hashtags !== "00" && (
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          color: "#005bd3",
-                          marginBottom: "8px",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {post.hashtags}
-                      </div>
-                    )}
-
-                    <p
-                      style={{
-                        fontSize: "13px",
-                        color: "#202223",
-                        margin: "0 0 8px 0",
-                        lineHeight: "1.4",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {post.caption || t("post.noCaption")}
-                    </p>
-
-                    <div style={{ marginBottom: "12px" }}>
-                      <a
-                        href={post.permalink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={t("aria.viewPost", {
-                          username: post.ownerUsername || post.accountUsername,
-                        })}
-                        style={{
-                          fontSize: "12px",
-                          color: "#005bd3",
-                          textDecoration: "none",
-                          fontWeight: "500",
-                        }}
-                      >
-                        {t("post.viewOnInstagram")}
-                      </a>
-                    </div>
-                    
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <ProductTagButton
-                        postId={post.id}
-                        onTagClick={handleProductTag}
-                        taggedProductsCount={taggedProducts[post.id]?.length || 0}
-                      />
-                      
-                      {taggedProducts[post.id]?.length > 0 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleClearProductTags(post.id);
-                          }}
-                          style={{
-                            padding: "8px 12px",
-                            backgroundColor: "#fff",
-                            border: "1px solid #bf0711",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            color: "#bf0711",
-                            fontWeight: "500",
-                          }}
-                          title={t("productTag.clearTags")}
-                        >
-                          {t("productTag.clear")}
-                        </button>
-                      )}
-                    </div>
-                    
-                    {taggedProducts[post.id]?.length > 0 && (
-                      <div style={{
-                        marginTop: "8px",
-                        fontSize: "11px",
-                        color: "#6d7175",
-                        fontStyle: "italic"
-                      }}>
-                        {t("productTag.taggedWith")}: {taggedProducts[post.id].map(p => p.title || p.id).join(", ")}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  post={post}
+                  isSelected={isSelected}
+                  onToggleSelection={togglePostSelection}
+                  onProductTag={handleProductTag}
+                  taggedProducts={taggedProducts}
+                  onClearTags={handleClearProductTags}
+                />
               );
             })}
-          </div>
+          </InlineGrid>
 
           {filteredPosts.length === 0 && selectedAccount !== "all" && (
             <s-text
@@ -852,7 +494,13 @@ export function ConfiguredState({
         onClose={handleCloseModal}
         onSave={handleSaveProductTags}
         postId={currentPostId}
-        currentlyTaggedProducts={currentPostId ? (taggedProducts[currentPostId]?.map(p => typeof p === 'string' ? p : p.id) || []) : []}
+        currentlyTaggedProducts={
+          currentPostId
+            ? taggedProducts[currentPostId]?.map((p) =>
+                typeof p === "string" ? p : p.id,
+              ) || []
+            : []
+        }
       />
     </>
   );
