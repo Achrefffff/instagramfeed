@@ -1,19 +1,29 @@
-"use client";
-
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Modal,
   TextField,
   Spinner,
   Banner,
-  Card,
-  Checkbox,
-  Text,
   Box,
   BlockStack,
-  InlineStack,
 } from "@shopify/polaris";
+
+// Lazy load Modal pour éviter les problèmes SSR
+const Modal = lazy(() =>
+  import("@shopify/polaris").then((mod) => ({ default: mod.Modal })),
+);
+const Card = lazy(() =>
+  import("@shopify/polaris").then((mod) => ({ default: mod.Card })),
+);
+const Checkbox = lazy(() =>
+  import("@shopify/polaris").then((mod) => ({ default: mod.Checkbox })),
+);
+const Text = lazy(() =>
+  import("@shopify/polaris").then((mod) => ({ default: mod.Text })),
+);
+const InlineStack = lazy(() =>
+  import("@shopify/polaris").then((mod) => ({ default: mod.InlineStack })),
+);
 
 export function ProductSelectorModal({
   isOpen,
@@ -86,7 +96,14 @@ export function ProductSelectorModal({
   );
 
   return (
-    <Modal
+    <Suspense
+      fallback={
+        <Box display="flex" justifyContent="center" padding="large">
+          <Spinner accessibilityLabel="Loading modal" />
+        </Box>
+      }
+    >
+      <Modal
       open={isOpen}
       onClose={onClose}
       title={t("productTag.modalTitle")}
@@ -193,6 +210,7 @@ export function ProductSelectorModal({
           )}
         </BlockStack>
       </Modal.Section>
-    </Modal>
+      </Modal>
+    </Suspense>
   );
 }
