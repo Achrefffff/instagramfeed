@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import { productTagging } from "../../services/productTagging.server.js";
 import { authenticate } from "../../shopify.server.js";
 
@@ -8,7 +7,10 @@ export async function loader({ request }) {
     const shop = url.searchParams.get("shop");
     
     if (!shop) {
-      return json({ error: "Shop parameter required" }, { status: 400 });
+      return new Response(JSON.stringify({ error: "Shop parameter required" }), { 
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
     }
 
     // Authentification simple pour le thème
@@ -17,8 +19,9 @@ export async function loader({ request }) {
     // Récupérer les données de tagging avec détails complets
     const taggedProducts = await productTagging.getTaggedProductsWithDetails(admin, shop);
     
-    return json(taggedProducts, {
+    return new Response(JSON.stringify(taggedProducts), {
       headers: {
+        "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET",
         "Access-Control-Allow-Headers": "Content-Type",
@@ -26,7 +29,10 @@ export async function loader({ request }) {
     });
   } catch (error) {
     console.error("Theme API error:", error);
-    return json({ error: "Failed to load product tags" }, { status: 500 });
+    return new Response(JSON.stringify({ error: "Failed to load product tags" }), { 
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 }
 
