@@ -19,7 +19,7 @@ Data structure:
       <div class="carousel-container">
         <div class="instagram-carousel" style="gap: {{ block.settings.gap }}px;">
         {% for post in instagram_data.posts limit: block.settings.max_posts %}
-          <div class="instagram-post carousel-post" style="border-radius: {{ block.settings.border_radius }}px; position: relative;" onclick="openLightbox({{ forloop.index0 }})">
+          <div class="instagram-post carousel-post" style="border-radius: {{ block.settings.border_radius }}px; position: relative; cursor: pointer;" data-post-index="{{ forloop.index0 }}">
             <img 
               src="{% if post.mediaType == 'VIDEO' and post.thumbnailUrl %}{{ post.thumbnailUrl }}{% else %}{{ post.mediaUrl }}{% endif %}" 
               alt="{{ post.caption | truncate: 100 }}" 
@@ -67,7 +67,7 @@ Data structure:
   {% else %}
     <div class="instagram-feed" style="grid-template-columns: repeat({{ block.settings.columns }}, 1fr); gap: {{ block.settings.gap }}px; padding: {{ block.settings.padding }}px;">
       {% for post in instagram_data.posts limit: block.settings.max_posts %}
-        <div class="instagram-post grid-post" style="border-radius: {{ block.settings.border_radius }}px; position: relative;" onclick="openLightbox({{ forloop.index0 }})">
+        <div class="instagram-post grid-post" style="border-radius: {{ block.settings.border_radius }}px; position: relative; cursor: pointer;" data-post-index="{{ forloop.index0 }}">
           <img 
             src="{% if post.mediaType == 'VIDEO' and post.thumbnailUrl %}{{ post.thumbnailUrl }}{% else %}{{ post.mediaUrl }}{% endif %}" 
             alt="{{ post.caption | truncate: 100 }}" 
@@ -157,15 +157,48 @@ Data structure:
       });
     };
 
-    (function() {
-      if (typeof window.initInstagramLightbox === 'function') {
-        window.initInstagramLightbox({{ instagram_data.posts | json }}, {{ product_tags | json }});
-      } else {
-        document.addEventListener('DOMContentLoaded', function() {
-          if (typeof window.initInstagramLightbox === 'function') {
-            window.initInstagramLightbox({{ instagram_data.posts | json }}, {{ product_tags | json }});
+    // Attach click handlers to posts after DOM is ready
+    function attachPostClickHandlers() {
+      const posts = document.querySelectorAll('.instagram-post[data-post-index]');
+      posts.forEach((post) => {
+        const index = parseInt(post.getAttribute('data-post-index'), 10);
+        post.style.cursor = 'pointer';
+        post.onclick = function(e) {
+          e.preventDefault();
+          if (typeof window.openLightbox === 'function') {
+            window.openLightbox(index);
           }
-        });
+        };
+        // Also add keyboard support
+        post.setAttribute('role', 'button');
+        post.setAttribute('tabindex', '0');
+        post.onkeydown = function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (typeof window.openLightbox === 'function') {
+              window.openLightbox(index);
+            }
+          }
+        };
+      });
+    }
+
+    // Initialize when JS loads
+    (function() {
+      function initializeBlock() {
+        if (typeof window.initInstagramLightbox === 'function') {
+          window.initInstagramLightbox({{ instagram_data.posts | json }}, {{ product_tags | json }});
+          attachPostClickHandlers();
+        } else {
+          // Retry if JS not loaded yet
+          setTimeout(initializeBlock, 100);
+        }
+      }
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeBlock);
+      } else {
+        initializeBlock();
       }
     })();
   </script>
