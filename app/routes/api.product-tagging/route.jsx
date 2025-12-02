@@ -2,7 +2,6 @@ import { data } from "react-router";
 import { authenticate } from "../../shopify.server";
 import { productTagging } from "../../services/productTagging.server";
 import { handleError, ValidationError } from "../../utils/errors.server";
-import { logger } from "../../utils/logger.server";
 
 export const action = async ({ request }) => {
   try {
