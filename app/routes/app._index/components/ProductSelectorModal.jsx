@@ -9,7 +9,8 @@ import {
   Checkbox,
   Text,
   Box,
-  Stack,
+  BlockStack,
+  InlineStack,
 } from "@shopify/polaris";
 
 export function ProductSelectorModal({
@@ -106,7 +107,7 @@ export function ProductSelectorModal({
       ]}
     >
       <Modal.Section>
-        <Stack gap="medium" direction="vertical">
+        <BlockStack gap="medium">
           {/* Search Field */}
           <TextField
             type="text"
@@ -139,7 +140,7 @@ export function ProductSelectorModal({
 
           {/* Products List */}
           {!loading && filteredProducts.length > 0 && (
-            <Stack gap="small" direction="vertical">
+            <BlockStack gap="small">
               {filteredProducts.map((product) => {
                 const isSelected = selectedProducts.has(String(product.id));
                 return (
@@ -155,7 +156,7 @@ export function ProductSelectorModal({
                       padding: "12px",
                     }}
                   >
-                    <Stack gap="medium" direction="horizontal" align="center">
+                    <InlineStack gap="medium" align="center">
                       <Checkbox
                         checked={isSelected}
                         onChange={() => handleProductToggle(product.id)}
@@ -185,14 +186,14 @@ export function ProductSelectorModal({
                             {product.priceRangeV2.minVariantPrice.currencyCode}
                           </Text>
                         )}
-                      </Box>
-                    </Stack>
+                      )}
+                    </InlineStack>
                   </Card>
                 );
               })}
-            </Stack>
+            </BlockStack>
           )}
-        </Stack>
+        </BlockStack>
       </Modal.Section>
     </Modal>
   );
