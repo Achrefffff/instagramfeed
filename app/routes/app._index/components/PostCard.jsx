@@ -12,7 +12,6 @@ import {
   HeartIcon,
   ChatIcon,
   ViewIcon,
-  BookmarkIcon,
 } from "@shopify/polaris-icons";
 import { useTranslation } from "react-i18next";
 
@@ -196,7 +195,9 @@ export function PostCard({
           )}
           {post.saved && (
             <InlineStack gap="100" blockAlign="center">
-              <Icon source={BookmarkIcon} tone="base" />
+              <Text as="span" variant="bodySm">
+                📌
+              </Text>
               <Text as="span" variant="bodySm">
                 {post.saved}
               </Text>
