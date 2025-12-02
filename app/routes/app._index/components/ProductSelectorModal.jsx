@@ -186,7 +186,7 @@ export function ProductSelectorModal({
                             {product.priceRangeV2.minVariantPrice.currencyCode}
                           </Text>
                         )}
-                      )}
+                      </Box>
                     </InlineStack>
                   </Card>
                 );
