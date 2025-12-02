@@ -1,5 +1,6 @@
 {% comment %}theme-check-disable RemoteAsset{% endcomment %}
 {% assign instagram_data = shop.metafields.custom.instagram_selected_posts.value %}
+{% assign product_tags = shop.metafields.custom.instagram_product_tags.value %}
 
 {% if instagram_data and instagram_data.posts %}
   {% if block.settings.layout == 'carousel' %}
@@ -122,6 +123,7 @@
         <div class="lightbox-body">
           <p id="lightbox-caption" class="lightbox-caption"></p>
           <div id="lightbox-hashtags" class="lightbox-hashtags"></div>
+          <div id="lightbox-products" class="lightbox-products"></div>
         </div>
         <div class="lightbox-footer">
           <div id="lightbox-stats" class="lightbox-stats"></div>
@@ -148,11 +150,11 @@
 
     (function() {
       if (typeof window.initInstagramLightbox === 'function') {
-        window.initInstagramLightbox({{ instagram_data.posts | json }});
+        window.initInstagramLightbox({{ instagram_data.posts | json }}, {{ product_tags | json }});
       } else {
         document.addEventListener('DOMContentLoaded', function() {
           if (typeof window.initInstagramLightbox === 'function') {
-            window.initInstagramLightbox({{ instagram_data.posts | json }});
+            window.initInstagramLightbox({{ instagram_data.posts | json }}, {{ product_tags | json }});
           }
         });
       }

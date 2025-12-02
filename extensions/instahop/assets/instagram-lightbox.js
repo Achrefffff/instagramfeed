@@ -1,9 +1,11 @@
 window.instagramPosts = [];
+window.productTags = {};
 window.currentIndex = 0;
 window.currentCarouselIndex = 0;
 
-window.initInstagramLightbox = function(posts) {
+window.initInstagramLightbox = function(posts, tags) {
   window.instagramPosts = posts;
+  window.productTags = tags || {};
 };
 
 window.openLightbox = function(index) {
@@ -136,6 +138,33 @@ function updateLightbox() {
   
   if (hashtags) {
     hashtags.textContent = (post.hashtags && post.hashtags !== '00') ? post.hashtags : '';
+  }
+  
+  // Afficher les produits taggés
+  const productsContainer = document.getElementById('lightbox-products');
+  if (productsContainer) {
+    const taggedProducts = window.productTags[post.id];
+    if (taggedProducts && taggedProducts.length > 0) {
+      let productsHTML = '<h4 style="margin: 16px 0 8px 0; font-size: 14px; font-weight: 600; color: #262626;">Produits associés</h4>';
+      productsHTML += '<div class="tagged-products-list">';
+      
+      taggedProducts.forEach(product => {
+        productsHTML += `
+          <div class="tagged-product-item">
+            <div class="product-info">
+              <h5 class="product-title">${product.title}</h5>
+              <p class="product-price">${product.price || 'Prix non disponible'}</p>
+            </div>
+            <a href="/products/${product.handle}" target="_blank" class="product-link">Voir le produit</a>
+          </div>
+        `;
+      });
+      
+      productsHTML += '</div>';
+      productsContainer.innerHTML = productsHTML;
+    } else {
+      productsContainer.innerHTML = '';
+    }
   }
 }
 
