@@ -149,16 +149,41 @@
     };
 
     // Debug: Afficher les données
+    console.log('=== DEBUG LIGHTBOX ===');
     console.log('Instagram posts:', {{ instagram_data.posts | json }});
-    console.log('Product tags:', {{ product_tags | json }});
+    console.log('Product tags raw:', '{{ product_tags }}');
+    console.log('Product tags parsed:', {{ product_tags | json }});
+    console.log('Product tags type:', typeof {{ product_tags | json }});
+    console.log('======================');
+    
+    // Test avec des données factices
+    const testTags = {
+      '{{ instagram_data.posts[0].id }}': [
+        {
+          id: 'test-1',
+          title: 'Produit Test',
+          handle: 'produit-test',
+          price: '29.99',
+          currency: 'EUR',
+          image: null
+        }
+      ]
+    };
     
     (function() {
       if (typeof window.initInstagramLightbox === 'function') {
-        window.initInstagramLightbox({{ instagram_data.posts | json }}, {{ product_tags | json }});
+        // Utiliser les vraies données ou les données de test
+        const realTags = {{ product_tags | json }};
+        const tagsToUse = realTags && Object.keys(realTags).length > 0 ? realTags : testTags;
+        console.log('Using tags:', tagsToUse);
+        window.initInstagramLightbox({{ instagram_data.posts | json }}, tagsToUse);
       } else {
         document.addEventListener('DOMContentLoaded', function() {
           if (typeof window.initInstagramLightbox === 'function') {
-            window.initInstagramLightbox({{ instagram_data.posts | json }}, {{ product_tags | json }});
+            const realTags = {{ product_tags | json }};
+            const tagsToUse = realTags && Object.keys(realTags).length > 0 ? realTags : testTags;
+            console.log('Using tags (DOM ready):', tagsToUse);
+            window.initInstagramLightbox({{ instagram_data.posts | json }}, tagsToUse);
           }
         });
       }

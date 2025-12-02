@@ -144,9 +144,13 @@ function updateLightbox() {
   
   // Afficher les produits taggés
   const productsContainer = document.getElementById('lightbox-products');
-  console.log('Products container:', productsContainer);
+  console.log('=== LIGHTBOX PRODUCTS DEBUG ===');
+  console.log('Products container found:', !!productsContainer);
+  console.log('Products container element:', productsContainer);
   console.log('All product tags:', window.productTags);
   console.log('Post ID:', post.id);
+  console.log('Post object:', post);
+  console.log('================================');
   
   if (productsContainer) {
     const taggedProducts = window.productTags[post.id];
@@ -174,7 +178,8 @@ function updateLightbox() {
       productsContainer.innerHTML = productsHTML;
     } else {
       console.log('No tagged products found for this post');
-      productsContainer.innerHTML = '';
+      // Afficher un message de test
+      productsContainer.innerHTML = '<div style="padding: 10px; background: #f0f0f0; border-radius: 5px; font-size: 12px;">Aucun produit taggé pour ce post (ID: ' + post.id + ')</div>';
     }
   } else {
     console.error('Products container not found!');
