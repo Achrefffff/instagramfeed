@@ -242,13 +242,9 @@ export const productTagging = {
       
       for (const productId of productIds) {
         try {
-          // Ignorer les objets et ne traiter que les strings d'ID valides
           if (typeof productId !== 'string' || !productId.includes('gid://shopify/Product/')) {
-            console.log('Skipping invalid product ID:', productId);
             continue;
           }
-          
-          console.log('Fetching product with ID:', productId);
           
           const response = await admin.graphql(
             `#graphql
@@ -290,7 +286,7 @@ export const productTagging = {
           }
         } catch (error) {
           logger.error(`Failed to get product ${productId}`, error);
-          // Continue avec les autres produits
+
         }
       }
       

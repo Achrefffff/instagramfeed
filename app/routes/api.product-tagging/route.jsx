@@ -5,12 +5,9 @@ import { handleError, ValidationError } from "../../utils/errors.server";
 import { logger } from "../../utils/logger.server";
 
 export const action = async ({ request }) => {
-  const startTime = Date.now();
   try {
     const { admin, session } = await authenticate.admin(request);
     const { shop } = session;
-
-    // Note: Rate limiting retiré pour éviter les erreurs de build client/serveur
 
     const body = await request.json();
     const { action: actionType, postId, productIds } = body;
@@ -32,17 +29,8 @@ export const action = async ({ request }) => {
           productIds
         );
 
-        // Récupérer les détails complets des produits étiquetés pour ce post
         const taggedProductsWithDetails = await productTagging.getTaggedProductsWithDetails(admin, shop);
         const postProducts = taggedProductsWithDetails[postId] || [];
-
-        const duration = Date.now() - startTime;
-        logger.info("Products tagged successfully", {
-          shop,
-          postId,
-          productCount: productIds.length,
-          duration,
-        });
 
         return data({ 
           success: true, 
@@ -63,14 +51,6 @@ export const action = async ({ request }) => {
           productIds
         );
 
-        const duration = Date.now() - startTime;
-        logger.info("Products untagged successfully", {
-          shop,
-          postId,
-          productCount: productIds.length,
-          duration,
-        });
-
         return data({ 
           success: true, 
           taggedProducts,
@@ -90,13 +70,6 @@ export const action = async ({ request }) => {
 
       case "clear": {
         await productTagging.clearProductsFromPost(admin, shop, postId);
-
-        const duration = Date.now() - startTime;
-        logger.info("Products cleared successfully", {
-          shop,
-          postId,
-          duration,
-        });
 
         return data({ 
           success: true, 
@@ -121,7 +94,6 @@ export const loader = async ({ request }) => {
     const action = url.searchParams.get("action");
 
     if (action === "products") {
-      // Récupérer les produits de la boutique
       const products = await productTagging.getShopProducts(admin, { first: 100 });
       return data({ 
         success: true, 
@@ -130,7 +102,6 @@ export const loader = async ({ request }) => {
     }
 
     if (action === "tagged") {
-      // Récupérer tous les produits étiquetés avec leurs détails
       const taggedProducts = await productTagging.getTaggedProductsWithDetails(admin, shop);
       return data({ 
         success: true, 
