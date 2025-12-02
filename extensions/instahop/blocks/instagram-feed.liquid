@@ -1,4 +1,13 @@
 {% comment %}theme-check-disable RemoteAsset{% endcomment %}
+{% comment %}
+Data structure:
+- instagram_data contains:
+  - posts: Array of Instagram posts with mediaUrl, mediaType, caption, etc.
+  
+- product_tags contains:
+  - Mapping of post IDs to tagged products
+  - Format: { "post_id": [{ id, title, handle, price, currency, image }, ...] }
+{% endcomment %}
 {% assign instagram_data = shop.metafields.custom.instagram_selected_posts.value %}
 {% assign product_tags = shop.metafields.custom.instagram_product_tags.value %}
 

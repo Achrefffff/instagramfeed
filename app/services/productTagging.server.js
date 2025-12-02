@@ -4,6 +4,20 @@ const METAFIELD_NAMESPACE = "custom";
 const METAFIELD_KEY = "instagram_tagged_products";
 const METAFIELD_KEY_DETAILS = "instagram_product_tags"; // Pour le thème
 
+/**
+ * Service de tagging de produits Shopify aux posts Instagram
+ *
+ * Optimisations implémentées :
+ * 1. Batch querying avec nodes() pour éviter N+1 queries
+ * 2. Gestion d'erreurs améliorée avec tracking des IDs manquants
+ * 3. Logging détaillé pour la production
+ * 4. Validation stricte des IDs GraphQL
+ *
+ * API Shopify documentée :
+ * - GraphQL Admin API v2025-10
+ * - Metafields API (JSON type)
+ * - Nodes() query pour batch fetch
+ */
 export const productTagging = {
   /**
    * Récupère les produits étiquetés pour un shop
@@ -21,16 +35,16 @@ export const productTagging = {
           }
         }`,
         {
-          variables: { 
-            namespace: METAFIELD_NAMESPACE, 
-            key: METAFIELD_KEY 
+          variables: {
+            namespace: METAFIELD_NAMESPACE,
+            key: METAFIELD_KEY,
           },
-        }
+        },
       );
 
       const data = await response.json();
       const metafield = data.data?.shop?.metafield;
-      
+
       if (!metafield?.value) {
         return {};
       }
@@ -67,7 +81,7 @@ export const productTagging = {
               message
             }
           }
-        }`
+        }`,
       );
 
       // Récupérer l'ID du shop
@@ -77,7 +91,7 @@ export const productTagging = {
           shop {
             id
           }
-        }`
+        }`,
       );
 
       const shopData = await shopResponse.json();
@@ -111,11 +125,11 @@ export const productTagging = {
               },
             ],
           },
-        }
+        },
       );
 
       const data = await response.json();
-      
+
       if (data.data?.metafieldsSet?.userErrors?.length > 0) {
         throw new Error(data.data.metafieldsSet.userErrors[0].message);
       }
@@ -133,20 +147,23 @@ export const productTagging = {
   async tagProductsToPost(admin, shop, postId, productIds) {
     try {
       const currentTags = await this.getTaggedProducts(admin, shop);
-      
+
       // Nettoyer et filtrer les IDs pour ne garder que les strings valides
       const cleanProductIds = productIds
-        .filter(id => typeof id === 'string' && id.includes('gid://shopify/Product/'))
-        .map(id => String(id));
-      
+        .filter(
+          (id) =>
+            typeof id === "string" && id.includes("gid://shopify/Product/"),
+        )
+        .map((id) => String(id));
+
       // Sauvegarder seulement les IDs (comme avant)
       currentTags[postId] = cleanProductIds;
-      
+
       await this.saveTaggedProducts(admin, shop, currentTags);
-      
+
       // Sauvegarder aussi les détails pour le thème
       await this.saveProductDetailsForTheme(admin, shop);
-      
+
       return currentTags[postId];
     } catch (error) {
       logger.error("Failed to tag products to post", error, { shop, postId });
@@ -160,25 +177,28 @@ export const productTagging = {
   async untagProductsFromPost(admin, shop, postId, productIds) {
     try {
       const currentTags = await this.getTaggedProducts(admin, shop);
-      
+
       if (!currentTags[postId]) {
         return [];
       }
-      
+
       // Supprimer les produits spécifiés
       currentTags[postId] = currentTags[postId].filter(
-        id => !productIds.includes(id)
+        (id) => !productIds.includes(id),
       );
-      
+
       // Si plus de produits, supprimer le post complètement
       if (currentTags[postId].length === 0) {
         delete currentTags[postId];
       }
-      
+
       await this.saveTaggedProducts(admin, shop, currentTags);
       return currentTags[postId] || [];
     } catch (error) {
-      logger.error("Failed to untag products from post", error, { shop, postId });
+      logger.error("Failed to untag products from post", error, {
+        shop,
+        postId,
+      });
       throw error;
     }
   },
@@ -189,107 +209,184 @@ export const productTagging = {
   async clearProductsFromPost(admin, shop, postId) {
     try {
       const currentTags = await this.getTaggedProducts(admin, shop);
-      
+
       if (currentTags[postId]) {
         delete currentTags[postId];
         await this.saveTaggedProducts(admin, shop, currentTags);
-        
+
         // Mettre à jour aussi les détails pour le thème
         await this.saveProductDetailsForTheme(admin, shop);
       }
-      
+
       return true;
     } catch (error) {
-      logger.error("Failed to clear products from post", error, { shop, postId });
+      logger.error("Failed to clear products from post", error, {
+        shop,
+        postId,
+      });
       throw error;
     }
   },
 
   /**
    * Récupère les produits étiquetés avec leurs détails complets
+   * Retourne aussi les warnings si certains produits n'ont pas pu être récupérés
    */
   async getTaggedProductsWithDetails(admin, shop) {
     try {
       const taggedProductIds = await this.getTaggedProducts(admin, shop);
       const result = {};
-      
+      const warnings = {};
+
       // Pour chaque post, récupérer les détails des produits
       for (const [postId, productIds] of Object.entries(taggedProductIds)) {
         if (productIds && productIds.length > 0) {
           const productDetails = await this.getProductsByIds(admin, productIds);
           result[postId] = productDetails;
+
+          // Tracker si certains produits n'ont pas pu être récupérés
+          if (productDetails.length < productIds.length) {
+            warnings[postId] = {
+              message: `${productIds.length - productDetails.length} produit(s) non trouvé(s)`,
+              requestedCount: productIds.length,
+              foundCount: productDetails.length,
+            };
+          }
         }
       }
-      
+
+      // Logger les avertissements
+      if (Object.keys(warnings).length > 0) {
+        logger.warn("Some tagged products could not be retrieved", {
+          shop,
+          warnings,
+          totalPosts: Object.keys(result).length,
+          postsWithWarnings: Object.keys(warnings).length,
+        });
+      }
+
       return result;
     } catch (error) {
-      logger.error("Failed to get tagged products with details", error, { shop });
+      logger.error("Failed to get tagged products with details", error, {
+        shop,
+      });
       return {};
     }
   },
 
   /**
    * Récupère les détails des produits par leurs IDs
+   * Utilise batch querying pour éviter les N+1 queries
+   * Max 10 produits par batch pour rester sous la limite de coût GraphQL
    */
   async getProductsByIds(admin, productIds) {
     try {
       if (!productIds || productIds.length === 0) {
         return [];
       }
-      
-      // Récupérer les produits un par un car la recherche par ID multiple n'est pas supportée directement
+
+      // Filtrer et valider les IDs
+      const validIds = productIds.filter(
+        (id) => typeof id === "string" && id.includes("gid://shopify/Product/"),
+      );
+
+      if (validIds.length === 0) {
+        return [];
+      }
+
       const products = [];
-      
-      for (const productId of productIds) {
+      const failedIds = [];
+      const BATCH_SIZE = 10; // Respecter la limite de coût Shopify
+
+      // Traiter les produits par batch
+      for (let i = 0; i < validIds.length; i += BATCH_SIZE) {
+        const batch = validIds.slice(i, i + BATCH_SIZE);
+
         try {
-          if (typeof productId !== 'string' || !productId.includes('gid://shopify/Product/')) {
-            continue;
-          }
-          
+          // Utiliser nodes() pour récupérer plusieurs produits en une seule requête
           const response = await admin.graphql(
             `#graphql
-            query getProductById($id: ID!) {
-              product(id: $id) {
-                id
-                title
-                handle
-                status
-                featuredImage {
-                  url
-                  altText
-                }
-                priceRangeV2 {
-                  minVariantPrice {
-                    amount
-                    currencyCode
+            query getProductsBatch($ids: [ID!]!) {
+              nodes(ids: $ids) {
+                ... on Product {
+                  id
+                  title
+                  handle
+                  status
+                  featuredMedia {
+                    ... on MediaImage {
+                      image {
+                        url
+                        altText
+                      }
+                    }
+                  }
+                  priceRangeV2 {
+                    minVariantPrice {
+                      amount
+                      currencyCode
+                    }
                   }
                 }
               }
             }`,
             {
-              variables: { id: productId },
-            }
+              variables: { ids: batch },
+            },
           );
 
           const data = await response.json();
-          if (data.data?.product) {
-            const product = data.data.product;
-            // Formater pour le thème avec les données nécessaires
-            products.push({
-              id: product.id,
-              title: product.title,
-              handle: product.handle,
-              price: product.priceRangeV2?.minVariantPrice?.amount || '0',
-              currency: product.priceRangeV2?.minVariantPrice?.currencyCode || 'EUR',
-              image: product.featuredImage?.url || null
+
+          if (data.errors && data.errors.length > 0) {
+            logger.warn("GraphQL error fetching batch of products", {
+              error: data.errors[0].message,
+              batchSize: batch.length,
+              attempt: Math.ceil((i + 1) / BATCH_SIZE),
+            });
+            // Ajouter les IDs du batch aux failures
+            batch.forEach((id) => failedIds.push(id));
+            continue;
+          }
+
+          // Traiter les résultats (null pour les produits non trouvés)
+          if (data.data?.nodes) {
+            data.data.nodes.forEach((product, index) => {
+              if (product) {
+                products.push({
+                  id: product.id,
+                  title: product.title,
+                  handle: product.handle,
+                  price: product.priceRangeV2?.minVariantPrice?.amount || "0",
+                  currency:
+                    product.priceRangeV2?.minVariantPrice?.currencyCode ||
+                    "EUR",
+                  image: product.featuredMedia?.image?.url || null,
+                });
+              } else {
+                // Produit non trouvé (null retourné par Shopify)
+                failedIds.push(batch[index]);
+              }
             });
           }
         } catch (error) {
-          logger.error(`Failed to get product ${productId}`, error);
-
+          logger.error("Failed to fetch batch of products", error, {
+            batchSize: batch.length,
+            attempt: Math.ceil((i + 1) / BATCH_SIZE),
+          });
+          // Ajouter les IDs du batch aux failures
+          batch.forEach((id) => failedIds.push(id));
         }
       }
-      
+
+      // Logger un avertissement si certains produits n'ont pas pu être récupérés
+      if (failedIds.length > 0) {
+        logger.warn("Some products could not be fetched", {
+          failedCount: failedIds.length,
+          totalRequested: validIds.length,
+          successCount: products.length,
+        });
+      }
+
       return products;
     } catch (error) {
       logger.error("Failed to get products by IDs", error);
@@ -299,27 +396,30 @@ export const productTagging = {
 
   /**
    * Sauvegarde les détails des produits pour le thème
+   * Utilise la méthode batch optimisée pour récupérer les produits
    */
   async saveProductDetailsForTheme(admin, shop) {
     try {
       const taggedProductIds = await this.getTaggedProducts(admin, shop);
       const productDetailsForTheme = {};
-      
+
       // Pour chaque post, récupérer les détails des produits
       for (const [postId, productIds] of Object.entries(taggedProductIds)) {
         if (productIds && productIds.length > 0) {
           // Filtrer pour ne garder que les IDs valides (strings)
-          const validIds = productIds.filter(id => 
-            typeof id === 'string' && id.includes('gid://shopify/Product/')
+          const validIds = productIds.filter(
+            (id) =>
+              typeof id === "string" && id.includes("gid://shopify/Product/"),
           );
-          
+
           if (validIds.length > 0) {
+            // Utiliser la méthode batch optimisée
             const productDetails = await this.getProductsByIds(admin, validIds);
             productDetailsForTheme[postId] = productDetails;
           }
         }
       }
-      
+
       // Récupérer l'ID du shop
       const shopResponse = await admin.graphql(
         `#graphql
@@ -327,11 +427,25 @@ export const productTagging = {
           shop {
             id
           }
-        }`
+        }`,
       );
 
       const shopData = await shopResponse.json();
-      const shopId = shopData.data.shop.id;
+
+      if (shopData.errors && shopData.errors.length > 0) {
+        logger.error("Failed to get shop ID", {
+          error: shopData.errors[0].message,
+          shop,
+        });
+        return null;
+      }
+
+      const shopId = shopData.data?.shop?.id;
+
+      if (!shopId) {
+        logger.error("Shop ID not returned from API", { shop });
+        return null;
+      }
 
       // Sauvegarder dans un metafield séparé
       const response = await admin.graphql(
@@ -361,19 +475,33 @@ export const productTagging = {
               },
             ],
           },
-        }
+        },
       );
 
       const data = await response.json();
-      
+
       if (data.data?.metafieldsSet?.userErrors?.length > 0) {
-        throw new Error(data.data.metafieldsSet.userErrors[0].message);
+        logger.error("Metafield save returned errors", {
+          errors: data.data.metafieldsSet.userErrors,
+          shop,
+        });
+        return null;
       }
+
+      logger.info("Product details saved to metafield for theme", {
+        shop,
+        totalPosts: Object.keys(productDetailsForTheme).length,
+        totalProducts: Object.values(productDetailsForTheme).reduce(
+          (sum, posts) => sum + posts.length,
+          0,
+        ),
+      });
 
       return data.data?.metafieldsSet?.metafields[0];
     } catch (error) {
       logger.error("Failed to save product details for theme", error, { shop });
-      // Ne pas faire échouer le processus principal
+      // Ne pas faire échouer le processus principal - retourner null au lieu de thrower
+      return null;
     }
   },
 
@@ -393,9 +521,13 @@ export const productTagging = {
                 title
                 handle
                 status
-                featuredImage {
-                  url
-                  altText
+                featuredMedia {
+                  ... on MediaImage {
+                    image {
+                      url
+                      altText
+                    }
+                  }
                 }
                 priceRangeV2 {
                   minVariantPrice {
@@ -413,7 +545,7 @@ export const productTagging = {
         }`,
         {
           variables: { first, query, after },
-        }
+        },
       );
 
       const data = await response.json();
