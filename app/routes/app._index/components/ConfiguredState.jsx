@@ -461,7 +461,7 @@ export function ConfiguredState({
             </div>
           </div>
 
-          <InlineGrid columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 4 }} gap="400">
+          <InlineGrid columns={{ xs: 1, sm: 2, md: 2, lg: 3, xl: 3 }} gap="500">
             {filteredPosts.map((post) => {
               const isSelected = selectedPosts.has(post.id);
               return (
