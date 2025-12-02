@@ -1,11 +1,13 @@
 import {
   Card,
-  Stack,
+  BlockStack,
+  InlineStack,
   Checkbox,
   Thumbnail,
   Button,
   Badge,
   Text,
+  Box,
 } from "@shopify/polaris";
 import { useTranslation } from "react-i18next";
 
@@ -54,28 +56,26 @@ export function PostCard({
 
   return (
     <Card sectioned onClick={handleCardClick}>
-      <Stack vertical spacing="tight">
-        <Stack alignment="center">
-          <Stack.Item fill>
+      <BlockStack gap="300">
+        <InlineStack alignment="space-between" blockAlign="center">
+          <Box>
             <Text as="p" variant="bodyMd" fontWeight="semibold">
               {post.ownerUsername || post.accountUsername}
             </Text>
             <Text as="p" variant="bodySm" tone="subdued">
               {new Date(post.timestamp).toLocaleDateString()}
             </Text>
-          </Stack.Item>
+          </Box>
 
-          <Stack.Item>
-            <Checkbox
-              checked={isSelected}
-              label=""
-              onChange={() => onToggleSelection(post.id)}
-              aria-label={t("aria.selectPost", {
-                username: post.ownerUsername || post.accountUsername,
-              })}
-            />
-          </Stack.Item>
-        </Stack>
+          <Checkbox
+            checked={isSelected}
+            label=""
+            onChange={() => onToggleSelection(post.id)}
+            aria-label={t("aria.selectPost", {
+              username: post.ownerUsername || post.accountUsername,
+            })}
+          />
+        </InlineStack>
 
         <div style={{ width: "100%", minHeight: 220 }}>{renderMedia()}</div>
 
@@ -89,15 +89,15 @@ export function PostCard({
           {post.caption || t("post.noCaption")}
         </Text>
 
-        <Stack distribution="equalSpacing" alignment="center">
+        <InlineStack gap="200" alignment="space-between" blockAlign="center">
           <a href={post.permalink} target="_blank" rel="noopener noreferrer">
             {t("post.viewOnInstagram")} →
           </a>
 
-          <Stack alignment="center" spacing="extraTight">
+          <InlineStack gap="200">
             <Button
               size="slim"
-              primary
+              variant="primary"
               onClick={(e) => {
                 e.stopPropagation();
                 onProductTag(post.id);
@@ -109,7 +109,8 @@ export function PostCard({
             {taggedCount > 0 && (
               <Button
                 size="slim"
-                destructive
+                variant="secondary"
+                tone="critical"
                 onClick={(e) => {
                   e.stopPropagation();
                   onClearTags(post.id);
@@ -118,9 +119,9 @@ export function PostCard({
                 {t("productTag.clear")}
               </Button>
             )}
-          </Stack>
-        </Stack>
-      </Stack>
+          </InlineStack>
+        </InlineStack>
+      </BlockStack>
     </Card>
   );
 }
