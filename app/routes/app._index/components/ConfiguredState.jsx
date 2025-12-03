@@ -10,13 +10,11 @@ import { useTranslation } from "react-i18next";
 
 export function ConfiguredState({
   posts = [],
-  accountsCount = 0,
-  accounts = [],
+  username = null,
   shop,
 }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [selectedAccount, setSelectedAccount] = useState("all");
   const [postType, setPostType] = useState("all");
   const [selectedPosts, setSelectedPosts] = useState(new Set());
   const [isSaving, setIsSaving] = useState(false);
@@ -72,29 +70,26 @@ export function ConfiguredState({
         }));
 
         if (window.shopify?.toast) {
-          window.shopify.toast.show(
-            result.message || "Produits étiquetés avec succès",
-          );
+          window.shopify.toast.show(result.message || t("messages.tagSuccess"));
         } else {
-          showToast(result.message || "Produits étiquetés avec succès");
+          showToast(result.message || t("messages.tagSuccess"));
         }
       } else {
         if (window.shopify?.toast) {
-          window.shopify.toast.show(
-            result.error || "Erreur lors de l'étiquetage",
-            { isError: true },
-          );
+          window.shopify.toast.show(result.error || t("messages.tagError"), {
+            isError: true,
+          });
         } else {
-          showToast(result.error || "Erreur lors de l'étiquetage", true);
+          showToast(result.error || t("messages.tagError"), true);
         }
       }
     } catch (error) {
       if (window.shopify?.toast) {
-        window.shopify.toast.show("Erreur réseau lors de l'étiquetage", {
+        window.shopify.toast.show(t("messages.tagNetworkError"), {
           isError: true,
         });
       } else {
-        showToast("Erreur réseau lors de l'étiquetage", true);
+        showToast(t("messages.tagNetworkError"), true);
       }
       console.error("Failed to save product tags:", error);
     }
@@ -121,27 +116,26 @@ export function ConfiguredState({
         });
 
         if (window.shopify?.toast) {
-          window.shopify.toast.show("Produits désétiquetés avec succès");
+          window.shopify.toast.show(t("messages.untagSuccess"));
         } else {
-          showToast("Produits désétiquetés avec succès");
+          showToast(t("messages.untagSuccess"));
         }
       } else {
         if (window.shopify?.toast) {
-          window.shopify.toast.show(
-            result.error || "Erreur lors du désétiquetage",
-            { isError: true },
-          );
+          window.shopify.toast.show(result.error || t("messages.untagError"), {
+            isError: true,
+          });
         } else {
-          showToast(result.error || "Erreur lors du désétiquetage", true);
+          showToast(result.error || t("messages.untagError"), true);
         }
       }
     } catch (error) {
       if (window.shopify?.toast) {
-        window.shopify.toast.show("Erreur réseau lors du désétiquetage", {
+        window.shopify.toast.show(t("messages.untagNetworkError"), {
           isError: true,
         });
       } else {
-        showToast("Erreur réseau lors du désétiquetage", true);
+        showToast(t("messages.untagNetworkError"), true);
       }
       console.error("Failed to clear product tags:", error);
     }
@@ -172,6 +166,8 @@ export function ConfiguredState({
   };
 
   const saveSelection = async () => {
+    if (selectedPosts.size === 0) return;
+    
     setIsSaving(true);
     try {
       const response = await fetch("/api/instagram/save-selection", {
@@ -184,6 +180,7 @@ export function ConfiguredState({
 
       if (response.ok) {
         showToast(t("messages.saveSuccess", { count: result.postsCount }));
+        setSelectedPosts(new Set());
       } else {
         showToast(
           result.error || t("messages.networkError", { message: "Unknown" }),
@@ -197,76 +194,38 @@ export function ConfiguredState({
     }
   };
 
-  const filteredPosts = posts
-    .filter(
-      (post) =>
-        selectedAccount === "all" || post.accountUsername === selectedAccount,
-    )
-    .filter((post) => {
-      if (postType === "all") return true;
-      if (postType === "published") return !post.isTagged;
-      if (postType === "tagged") return post.isTagged;
-      return true;
-    });
+  const filteredPosts = posts.filter((post) => {
+    if (postType === "all") return true;
+    if (postType === "published") return !post.isTagged;
+    if (postType === "tagged") return post.isTagged;
+    return true;
+  });
 
   if (posts.length === 0) {
     return (
-      <s-section heading="Vos comptes Instagram">
+      <s-section heading="Votre compte Instagram">
         <s-stack direction="block" gap="base">
           <s-paragraph>
-            {accountsCount > 0
+            {username
               ? t("messages.noPostsFound")
               : t("messages.noAccountConnected")}
           </s-paragraph>
 
-          {accounts.length > 0 && (
+          {username && (
             <div style={{ marginTop: "16px" }}>
               <s-text variant="headingSm">
-                {t("messages.connectedAccounts")}
+                Compte connecté: @{username}
               </s-text>
-              <s-stack
-                direction="block"
-                gap="tight"
-                style={{ marginTop: "8px" }}
-              >
-                {accounts.map((account) => (
-                  <div
-                    key={account.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "8px 12px",
-                      border: "1px solid #e1e3e5",
-                      borderRadius: "6px",
-                    }}
-                  >
-                    <s-text variant="bodySm">@{account.username}</s-text>
-                    <Form method="post" style={{ margin: 0 }}>
-                      <input type="hidden" name="action" value="disconnect" />
-                      <input
-                        type="hidden"
-                        name="accountId"
-                        value={account.id}
-                      />
-                      <button
-                        type="submit"
-                        style={{
-                          padding: "4px 8px",
-                          backgroundColor: "#fff",
-                          border: "1px solid #c9cccf",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          color: "#bf0711",
-                        }}
-                      >
-                        {t("app.disconnect")}
-                      </button>
-                    </Form>
-                  </div>
-                ))}
-              </s-stack>
+              <Form method="post" style={{ marginTop: "8px" }}>
+                <input type="hidden" name="action" value="disconnect" />
+                <s-button
+                  variant="tertiary"
+                  tone="critical"
+                  type="submit"
+                >
+                  Déconnecter
+                </s-button>
+              </Form>
             </div>
           )}
         </s-stack>
@@ -283,7 +242,7 @@ export function ConfiguredState({
       />
 
       <div style={{ marginBottom: "16px" }}>
-        <StatsOverview posts={posts} accountsCount={accountsCount} />
+        <StatsOverview posts={posts} username={username} />
       </div>
 
       <s-section heading={t("app.title")}>
@@ -305,157 +264,57 @@ export function ConfiguredState({
                 flexWrap: "wrap",
               }}
             >
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {accounts.map((account) => (
-                  <div
-                    key={account.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "4px 8px",
-                      backgroundColor: "#f6f6f7",
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                    }}
-                  >
-                    <span>@{account.username}</span>
-                    <Form
-                      method="post"
-                      style={{ margin: 0, display: "inline" }}
-                    >
-                      <input type="hidden" name="action" value="disconnect" />
-                      <input
-                        type="hidden"
-                        name="accountId"
-                        value={account.id}
-                      />
-                      <button
-                        type="submit"
-                        aria-label={`Déconnecter le compte @${account.username}`}
-                        style={{
-                          padding: "2px 6px",
-                          backgroundColor: "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          fontSize: "16px",
-                          lineHeight: "1",
-                          color: "#bf0711",
-                        }}
-                        title="Déconnecter ce compte"
-                      >
-                        ×
-                      </button>
-                    </Form>
-                  </div>
-                ))}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "4px 8px",
+                  backgroundColor: "#f6f6f7",
+                  borderRadius: "6px",
+                  fontSize: "13px",
+                }}
+              >
+                <span>@{username}</span>
               </div>
-
-              {accountsCount > 1 && (
-                <select
-                  value={selectedAccount}
-                  onChange={(e) => setSelectedAccount(e.target.value)}
-                  aria-label={t("filters.filterByAccount")}
-                  style={{
-                    padding: "6px 12px",
-                    border: "1px solid #c9cccf",
-                    borderRadius: "6px",
-                    fontSize: "14px",
-                    backgroundColor: "#fff",
-                  }}
-                >
-                  <option value="all">{t("filters.allAccounts")}</option>
-                  {accounts.map((account) => (
-                    <option key={account.id} value={account.username}>
-                      @{account.username}
-                    </option>
-                  ))}
-                </select>
-              )}
 
               <div
                 style={{
                   display: "flex",
                   gap: "4px",
-                  backgroundColor: "#f6f6f7",
-                  padding: "4px",
-                  borderRadius: "8px",
                 }}
               >
                 {["all", "published", "tagged"].map((type) => (
-                  <button
+                  <s-button
                     key={type}
                     onClick={() => setPostType(type)}
+                    variant={postType === type ? "primary" : "secondary"}
                     aria-label={t("aria.filterPosts", {
                       type: t(`filters.${type}`),
                     })}
                     aria-pressed={postType === type}
-                    style={{
-                      padding: "6px 12px",
-                      border: "none",
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                      fontWeight: "500",
-                      cursor: "pointer",
-                      backgroundColor:
-                        postType === type ? "#fff" : "transparent",
-                      color: postType === type ? "#202223" : "#6d7175",
-                      boxShadow:
-                        postType === type
-                          ? "0 1px 3px rgba(0,0,0,0.1)"
-                          : "none",
-                      transition: "all 0.2s",
-                    }}
                   >
                     {t(`filters.${type}`)}
-                  </button>
+                  </s-button>
                 ))}
               </div>
             </div>
 
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               {selectedPosts.size > 0 && (
-                <>
-                  <div onClick={saveSelection}>
-                    <s-button variant="primary" disabled={isSaving}>
-                      {isSaving
-                        ? t("app.saving")
-                        : `${t("app.save")} (${selectedPosts.size})`}
-                    </s-button>
-                  </div>
-                </>
+                <div onClick={saveSelection}>
+                  <s-button variant="primary" disabled={isSaving} loading={isSaving}>
+                    {isSaving
+                      ? t("app.saving")
+                      : `${t("app.save")} (${selectedPosts.size})`}
+                  </s-button>
+                </div>
               )}
 
-              <div
-                onClick={() => {
-                  const popup = window.open(
-                    `/api/instagram/connect?shop=${encodeURIComponent(shop)}`,
-                    "instagram-auth",
-                    "width=600,height=700",
-                  );
-
-                  if (!popup) {
-                    alert(
-                      "Veuillez autoriser les popups pour connecter Instagram",
-                    );
-                    return;
-                  }
-
-                  const checkPopup = setInterval(() => {
-                    if (popup.closed) {
-                      clearInterval(checkPopup);
-                      navigate("/app", { replace: true });
-                    }
-                  }, 300);
-                }}
-              >
-                <s-button>{t("app.addAccount")}</s-button>
-              </div>
-
               <Form method="post">
-                <input type="hidden" name="action" value="disconnect_all" />
+                <input type="hidden" name="action" value="disconnect" />
                 <s-button type="submit" tone="critical">
-                  {t("app.disconnectAll")}
+                  Déconnecter
                 </s-button>
               </Form>
             </div>
@@ -466,7 +325,7 @@ export function ConfiguredState({
               const isSelected = selectedPosts.has(post.id);
               return (
                 <PostCard
-                  key={`${post.configId}-${post.id}`}
+                  key={post.id}
                   post={post}
                   isSelected={isSelected}
                   onToggleSelection={togglePostSelection}
@@ -478,14 +337,7 @@ export function ConfiguredState({
             })}
           </InlineGrid>
 
-          {filteredPosts.length === 0 && selectedAccount !== "all" && (
-            <s-text
-              variant="bodySm"
-              style={{ textAlign: "center", color: "#6d7175", padding: "32px" }}
-            >
-              {t("messages.noPostsForAccount", { username: selectedAccount })}
-            </s-text>
-          )}
+
         </s-stack>
       </s-section>
 

@@ -18,13 +18,18 @@ i18n
       es: { common: esCommon },
     },
     fallbackLng: "en",
+    lng: "en",
     defaultNS: "common",
+    ns: ["common"],
     interpolation: {
       escapeValue: false,
     },
     detection: {
       order: ["localStorage", "navigator"],
       caches: ["localStorage"],
+    },
+    react: {
+      useSuspense: false,
     },
   });
 

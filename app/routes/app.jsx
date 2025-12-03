@@ -3,7 +3,6 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider as ShopifyAppProvider } from "@shopify/shopify-app-react-router/react";
 import { AppProvider } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
-import { useTranslation } from "react-i18next";
 
 export const loader = async ({ request }) => {
   await authenticate.admin(request);
@@ -12,20 +11,20 @@ export const loader = async ({ request }) => {
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
 };
 
-const polarisI18n = {
-  Polaris: {
-    Common: {
-      checkbox: "checkbox",
-    },
-  },
-};
-
 export default function App() {
   const { apiKey } = useLoaderData();
-  const { i18n } = useTranslation();
+
+  // Simple i18n config for Polaris (minimal)
+  const polarisI18n = {
+    Polaris: {
+      Common: {
+        checkbox: "checkbox",
+      },
+    },
+  };
 
   return (
-    <ShopifyAppProvider embedded apiKey={apiKey} i18n={i18n.language}>
+    <ShopifyAppProvider embedded apiKey={apiKey}>
       <AppProvider i18n={polarisI18n}>
         <s-app-nav>
           <s-link href="/app" rel="home">

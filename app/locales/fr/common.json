@@ -2,9 +2,7 @@
   "app": {
     "title": "Flux Instagram",
     "connect": "Connecter Instagram",
-    "addAccount": "Ajouter un compte",
     "disconnect": "Déconnecter",
-    "disconnectAll": "Déconnecter tout",
     "save": "Sauvegarder",
     "saving": "Sauvegarde..."
   },
@@ -18,20 +16,22 @@
   "filters": {
     "all": "Tous",
     "published": "Publiés",
-    "tagged": "Tagués",
-    "allAccounts": "Tous les comptes",
-    "filterByAccount": "Filtrer par compte Instagram"
+    "tagged": "UGC (contenu généré par les utilisateurs)"
   },
   "messages": {
     "noPostsFound": "Aucun post Instagram trouvé. Publiez du contenu sur Instagram pour le voir apparaître ici.",
     "noAccountConnected": "Aucun compte Instagram connecté.",
-    "connectedAccounts": "Comptes connectés :",
     "saveSuccess": "{{count}} posts sauvegardés avec succès !",
     "tooManyAttempts": "Trop de tentatives, réessayez dans 1 heure",
     "tooManySaves": "Trop de sauvegardes, veuillez patienter quelques minutes",
     "tooManyDisconnects": "Trop de déconnexions, veuillez patienter",
     "networkError": "Erreur réseau : {{message}}",
-    "noPostsForAccount": "Aucun post trouvé pour @{{username}}"
+    "tagSuccess": "Produits étiquetés avec succès",
+    "tagError": "Erreur lors de l'étiquetage",
+    "tagNetworkError": "Erreur réseau lors de l'étiquetage",
+    "untagSuccess": "Produits désétiquetés avec succès",
+    "untagError": "Erreur lors du désétiquetage",
+    "untagNetworkError": "Erreur réseau lors du désétiquetage"
   },
   "empty": {
     "title": "Comment ça marche ?",
@@ -40,14 +40,15 @@
     "step2Title": "2. Sélectionnez vos posts",
     "step2Desc": "Choisissez les posts à afficher sur votre boutique",
     "step3Title": "3. Publiez sur votre site",
-    "step3Desc": "Ajoutez le bloc Instagram Feed à votre thème",
+    "step3Desc": "Ajoutez le bloc SocialFlux à votre thème",
     "info": "Transformez vos posts Instagram en contenu engageant pour votre boutique. Synchronisation automatique et affichage personnalisable.",
     "warning": "Vous aurez besoin d'un compte Instagram Business connecté à une page Facebook pour utiliser cette application."
   },
   "post": {
-    "tagged": "TAGUÉ",
+    "tagged": "UGC (contenu généré par les utilisateurs)",
     "noCaption": "Pas de légende",
-    "viewOnInstagram": "Voir sur Instagram →"
+    "viewOnInstagram": "Voir sur Instagram →",
+    "mediaUnavailable": "Média indisponible"
   },
   "productTag": {
     "button": "Étiqueter",
@@ -68,13 +69,16 @@
     "clear": "Effacer",
     "clearTags": "Effacer toutes les étiquettes"
   },
+  "toast": {
+    "success": "Succès",
+    "error": "Erreur"
+  },
   "aria": {
     "filterPosts": "Filtrer les posts : {{type}}",
-    "disconnectAccount": "Déconnecter le compte @{{username}}",
-    "postCheckbox": "Post Instagram de @{{username}} - {{caption}}",
+    "postCheckbox": "Post Instagram - {{caption}}",
     "postImage": "Post Instagram : {{caption}}",
-    "postVideo": "Vidéo Instagram de @{{username}}",
-    "viewPost": "Voir le post de @{{username}} sur Instagram (ouvre dans un nouvel onglet)",
+    "postVideo": "Vidéo Instagram",
+    "viewPost": "Voir le post sur Instagram (ouvre dans un nouvel onglet)",
     "connectButton": "Connecter votre compte Instagram Business",
     "stat": "{{label}} : {{value}}"
   }

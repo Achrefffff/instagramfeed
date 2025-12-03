@@ -156,13 +156,11 @@ export const loader = async ({ request }) => {
     try {
       const result = await prisma.instagramConfig.upsert({
         where: {
-          shop_username: {
-            shop,
-            username: sanitizedUsername,
-          },
+          shop,
         },
         update: {
           accessToken,
+          username: sanitizedUsername,
           isActive: true,
           tokenExpiresAt,
           lastRefreshedAt: new Date(),

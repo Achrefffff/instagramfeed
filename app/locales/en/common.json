@@ -1,10 +1,8 @@
 {
   "app": {
-    "title": "Instagram Feed",
+    "title": "SocialFlux",
     "connect": "Connect Instagram",
-    "addAccount": "Add account",
     "disconnect": "Disconnect",
-    "disconnectAll": "Disconnect all",
     "save": "Save",
     "saving": "Saving..."
   },
@@ -18,20 +16,22 @@
   "filters": {
     "all": "All",
     "published": "Published",
-    "tagged": "Tagged",
-    "allAccounts": "All accounts",
-    "filterByAccount": "Filter by Instagram account"
+    "tagged": "UGC (user generated content)"
   },
   "messages": {
     "noPostsFound": "No Instagram posts found. Publish content on Instagram to see it here.",
     "noAccountConnected": "No Instagram account connected.",
-    "connectedAccounts": "Connected accounts:",
     "saveSuccess": "{{count}} posts saved successfully!",
     "tooManyAttempts": "Too many attempts, please try again in 1 hour",
     "tooManySaves": "Too many saves, please wait a few minutes",
     "tooManyDisconnects": "Too many disconnections, please wait",
     "networkError": "Network error: {{message}}",
-    "noPostsForAccount": "No posts found for @{{username}}"
+    "tagSuccess": "Products tagged successfully",
+    "tagError": "Error during tagging",
+    "tagNetworkError": "Network error during tagging",
+    "untagSuccess": "Products untagged successfully",
+    "untagError": "Error during untagging",
+    "untagNetworkError": "Network error during untagging"
   },
   "empty": {
     "title": "How does it work?",
@@ -40,14 +40,15 @@
     "step2Title": "2. Select your posts",
     "step2Desc": "Choose the posts to display on your store",
     "step3Title": "3. Publish on your site",
-    "step3Desc": "Add the Instagram Feed block to your theme",
+    "step3Desc": "Add the SocialFlux block to your theme",
     "info": "Transform your Instagram posts into engaging content for your store. Automatic synchronization and customizable display.",
     "warning": "You will need an Instagram Business account connected to a Facebook page to use this application."
   },
   "post": {
-    "tagged": "TAGGED",
+    "tagged": "UGC (user generated content)",
     "noCaption": "No caption",
-    "viewOnInstagram": "View on Instagram →"
+    "viewOnInstagram": "View on Instagram →",
+    "mediaUnavailable": "Media unavailable"
   },
   "productTag": {
     "button": "Tag",
@@ -68,13 +69,16 @@
     "clear": "Clear",
     "clearTags": "Clear all tags"
   },
+  "toast": {
+    "success": "Success",
+    "error": "Error"
+  },
   "aria": {
     "filterPosts": "Filter posts: {{type}}",
-    "disconnectAccount": "Disconnect account @{{username}}",
-    "postCheckbox": "Instagram post from @{{username}} - {{caption}}",
+    "postCheckbox": "Instagram post - {{caption}}",
     "postImage": "Instagram post: {{caption}}",
-    "postVideo": "Instagram video from @{{username}}",
-    "viewPost": "View post from @{{username}} on Instagram (opens in new tab)",
+    "postVideo": "Instagram video",
+    "viewPost": "View post on Instagram (opens in new tab)",
     "connectButton": "Connect your Instagram Business account",
     "stat": "{{label}}: {{value}}"
   }

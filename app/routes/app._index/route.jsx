@@ -16,41 +16,48 @@ import { logger } from "../../utils/logger.server";
 import { checkRateLimit, RATE_LIMITS } from "../../utils/rateLimit.server";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
-import { WelcomeSection, EmptyState, ConfiguredState } from "./components";
+import { ErrorBoundary as AppErrorBoundary } from "../../components/ErrorBoundary";
+import { EmptyState, ConfiguredState } from "./components";
 
-async function fetchInstagramPostsForAccount(config) {
+async function fetchInstagramPosts(config) {
   try {
+    logger.info("Fetching posts for account", {
+      configId: config.id,
+      username: config.username,
+    });
+
     // Vérifier et rafraîchir le token si nécessaire
     let activeConfig = config;
-    let tokenRefreshWarning = null;
     try {
+      logger.info("Checking token refresh", { configId: config.id });
       activeConfig = await instagram.checkAndRefreshTokenIfNeeded(
         config,
         prisma,
       );
-      // Capturer le warning si le refresh a échoué
-      if (activeConfig.tokenRefreshFailed) {
-        tokenRefreshWarning = activeConfig.tokenRefreshError;
-      }
+      logger.info("Token check completed", { configId: config.id });
     } catch (error) {
       logger.warn("Token refresh check failed", {
         shop: config.shop,
         error: error?.message,
       });
-      // Continue with current config even if refresh check fails
     }
 
+    logger.info("Getting Instagram accounts", { configId: config.id });
     const pages = await instagram.getInstagramAccounts(
       activeConfig.accessToken,
     );
     const pageWithInstagram = pages.find((p) => p.instagram_business_account);
 
     if (!pageWithInstagram) {
+      logger.warn("No Instagram business account found", {
+        configId: config.id,
+      });
       return [];
     }
 
     const instagramId = pageWithInstagram.instagram_business_account.id;
 
+    logger.info("Getting Instagram username", { configId: config.id });
     const actualUsername = await instagram.getInstagramUsername(
       instagramId,
       activeConfig.accessToken,
@@ -61,17 +68,33 @@ async function fetchInstagramPostsForAccount(config) {
         data: { username: actualUsername },
       });
       config.username = actualUsername;
+      logger.info("Username updated", {
+        configId: config.id,
+        newUsername: actualUsername,
+      });
     }
 
+    logger.info("Getting posts (published + tagged)", { configId: config.id });
     const [publishedPosts, taggedPosts] = await Promise.all([
       instagram.getInstagramPosts(instagramId, activeConfig.accessToken),
       instagram.getTaggedPosts(instagramId, activeConfig.accessToken),
     ]);
 
+    logger.info("Posts fetched", {
+      configId: config.id,
+      publishedCount: publishedPosts.length,
+      taggedCount: taggedPosts.length,
+    });
+
     const allPosts = [
       ...publishedPosts.map((p) => ({ ...p, isTagged: false })),
       ...taggedPosts.map((p) => ({ ...p, isTagged: true })),
     ];
+
+    logger.info("Saving posts to database", {
+      configId: config.id,
+      totalCount: allPosts.length,
+    });
 
     await Promise.all(
       allPosts.map(async (post) => {
@@ -158,11 +181,9 @@ async function fetchInstagramPostsForAccount(config) {
       }),
     );
 
-    return allPosts.map((post) => ({
-      ...post,
-      accountUsername: config.username,
-      configId: config.id,
-    }));
+    logger.info("Posts saved successfully", { configId: config.id });
+
+    return allPosts;
   } catch (error) {
     logger.error("Failed to fetch Instagram posts", error, {
       configId: config.id,
@@ -195,88 +216,58 @@ export const loader = async ({ request }) => {
     const { session } = await authenticate.admin(request);
     const shop = session.shop;
 
-    const configs = await prisma.instagramConfig.findMany({
+    logger.info("Loader started", { shop });
+
+    const config = await prisma.instagramConfig.findFirst({
       where: {
         shop,
         isActive: true,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
     });
 
+    logger.info("Config loaded", { shop, hasConfig: !!config });
+
+    let posts = [];
     let errors = [];
-    let warnings = []; // Ajouter un array pour les warnings
 
-    if (configs.length > 0) {
-      const syncPromises = configs.map((config) =>
-        fetchInstagramPostsForAccount(config),
-      );
-
-      const results = await Promise.allSettled(syncPromises);
-
-      results.forEach((result, index) => {
-        if (result.status === "rejected") {
-          errors.push({
-            configId: configs[index].id,
-            username: configs[index].username,
-            error: result.reason.message,
-          });
-        }
+    if (config) {
+      logger.info("Starting sync for config", {
+        shop,
+        username: config.username,
       });
 
-      // Vérifier les tokens refresh qui ont échoué
-      for (const config of configs) {
-        const refreshCheckConfig = await instagram.checkAndRefreshTokenIfNeeded(
-          config,
-          prisma,
-        );
-        if (refreshCheckConfig.tokenRefreshFailed) {
-          warnings.push({
-            configId: config.id,
-            username: config.username,
-            message: refreshCheckConfig.tokenRefreshError,
-            type: "token_refresh_failed",
-          });
-        }
+      try {
+        await fetchInstagramPosts(config);
+        logger.info("Sync completed", { shop });
+      } catch (error) {
+        logger.error("Sync failed", error, {
+          configId: config.id,
+          username: config.username,
+        });
+        errors.push({
+          username: config.username,
+          error: error.message,
+        });
       }
-    }
 
-    const activeUsernames = configs.map((c) => c.username);
-    const posts = await prisma.instagramPost.findMany({
-      where: {
-        shop,
-        username: {
-          in: activeUsernames,
+      posts = await prisma.instagramPost.findMany({
+        where: {
+          shop,
+          username: config.username,
         },
-      },
-      orderBy: {
-        timestamp: "desc",
-      },
-      take: 100,
-    });
-
-    const postsWithAccount = posts.map((post) => {
-      const config = configs.find((c) => c.username === post.username);
-      return {
-        ...post,
-        accountUsername: post.username,
-        configId: config?.id,
-      };
-    });
+        orderBy: {
+          timestamp: "desc",
+        },
+        take: 100,
+      });
+    }
 
     return {
       shop,
-      isConfigured: configs.length > 0,
-      posts: postsWithAccount,
-      accountsCount: configs.length,
-      accounts: configs.map((config) => ({
-        id: config.id,
-        username: config.username,
-        createdAt: config.createdAt,
-      })),
+      isConfigured: !!config,
+      posts,
+      username: config?.username || null,
       errors: errors.length > 0 ? errors : null,
-      warnings: warnings.length > 0 ? warnings : null, // Ajouter les warnings
     };
   } catch (error) {
     logger.error("Loader error in app._index", error);
@@ -284,8 +275,7 @@ export const loader = async ({ request }) => {
       shop: "unknown",
       isConfigured: false,
       posts: [],
-      accountsCount: 0,
-      accounts: [],
+      username: null,
       errors: [{ error: "Échec du chargement des données Instagram" }],
     };
   }
@@ -296,10 +286,8 @@ export default function Index() {
     shop,
     isConfigured,
     posts,
-    accountsCount,
-    accounts,
+    username,
     errors,
-    warnings,
   } = useLoaderData();
   const actionData = useActionData();
   const navigate = useNavigate();
@@ -372,44 +360,31 @@ export default function Index() {
       <div style={{ position: "absolute", top: "16px", right: "16px" }}>
         <LanguageSwitcher />
       </div>
-      {!isConfigured && <WelcomeSection />}
-
-      {warnings && warnings.length > 0 && (
-        <s-section variant="warning">
-          <s-stack direction="block" gap="tight">
-            <s-text variant="headingSm">⚠️ Avertissements</s-text>
-            {warnings.map((warning, index) => (
-              <s-text key={index} variant="bodySm">
-                {warning.username}: {warning.message}
-              </s-text>
-            ))}
-          </s-stack>
-        </s-section>
-      )}
 
       {errors && errors.length > 0 && (
         <s-section variant="critical">
           <s-stack direction="block" gap="tight">
-            <s-text variant="headingSm">Erreurs de synchronisation</s-text>
+            <s-text variant="headingSm">Erreur de synchronisation</s-text>
             {errors.map((error, index) => (
               <s-text key={index} variant="bodySm">
-                {error.username}: {error.error}
+                {error.error}
               </s-text>
             ))}
           </s-stack>
         </s-section>
       )}
 
-      {!isConfigured ? (
-        <EmptyState shop={shop} />
-      ) : (
-        <ConfiguredState
-          posts={posts}
-          accountsCount={accountsCount}
-          accounts={accounts}
-          shop={shop}
-        />
-      )}
+      <AppErrorBoundary>
+        {!isConfigured ? (
+          <EmptyState shop={shop} />
+        ) : (
+          <ConfiguredState
+            posts={posts}
+            username={username}
+            shop={shop}
+          />
+        )}
+      </AppErrorBoundary>
     </s-page>
   );
 }
@@ -450,39 +425,12 @@ export const action = async ({ request }) => {
 
     switch (actionType) {
       case "disconnect": {
-        const accountId = formData.get("accountId");
-        if (!accountId || typeof accountId !== "string") {
-          logger.warn("Invalid account ID", { accountId });
-          return data({ error: "ID de compte invalide" }, { status: 400 });
-        }
-
-        let config;
         try {
-          config = await prisma.instagramConfig.findFirst({
+          await prisma.instagramConfig.updateMany({
             where: {
-              id: accountId,
               shop,
               isActive: true,
             },
-          });
-        } catch (error) {
-          throw new DatabaseError(
-            "Erreur lors de la recherche du compte",
-            error,
-          );
-        }
-
-        if (!config) {
-          logger.warn("Account not found for disconnect", { accountId, shop });
-          return data(
-            { error: "Compte introuvable ou déjà déconnecté" },
-            { status: 404 },
-          );
-        }
-
-        try {
-          await prisma.instagramConfig.update({
-            where: { id: accountId },
             data: { isActive: false },
           });
         } catch (error) {
@@ -492,40 +440,11 @@ export const action = async ({ request }) => {
           );
         }
 
-        logger.info("Account disconnected successfully", {
-          shop,
-          accountId,
-          username: config.username,
-        });
+        logger.info("Account disconnected", { shop });
 
         return data({
           success: true,
-          message: `Compte @${config.username} déconnecté avec succès`,
-        });
-      }
-
-      case "disconnect_all": {
-        let result;
-        try {
-          result = await prisma.instagramConfig.updateMany({
-            where: {
-              shop,
-              isActive: true,
-            },
-            data: { isActive: false },
-          });
-        } catch (error) {
-          throw new DatabaseError(
-            "Erreur lors de la déconnexion des comptes",
-            error,
-          );
-        }
-
-        logger.info("All accounts disconnected", { shop, count: result.count });
-
-        return data({
-          success: true,
-          message: `${result.count} compte(s) déconnecté(s) avec succès`,
+          message: "Compte Instagram déconnecté avec succès",
           redirect: "/app",
         });
       }
