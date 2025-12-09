@@ -14,12 +14,15 @@ import { instagram } from "../../services/instagram.server";
 import { handleError, DatabaseError } from "../../utils/errors.server";
 import { logger } from "../../utils/logger.server";
 import { checkRateLimit, RATE_LIMITS } from "../../utils/rateLimit.server";
+import { validateAndSanitizeInstagramPost } from "../../utils/validation.server";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { ErrorBoundary as AppErrorBoundary } from "../../components/ErrorBoundary";
 import { EmptyState, ConfiguredState } from "./components";
 
 async function fetchInstagramPosts(config) {
+  const fetchStartTime = performance.now();
+  
   try {
     logger.info("Fetching posts for account", {
       configId: config.id,
@@ -151,7 +154,10 @@ async function fetchInstagramPosts(config) {
       }
     }
 
-    // Step 2: Process posts with pre-fetched carousel data
+    // Step 2: Process posts with validation and sanitization
+    const validPosts = [];
+    const invalidPosts = [];
+
     await Promise.all(
       allPosts.map(async (post) => {
         let insights = { impressions: null, reach: null, saved: null };
@@ -161,7 +167,6 @@ async function fetchInstagramPosts(config) {
             activeConfig.accessToken,
           );
         } catch (error) {
-          // C'est normal : posts récents, UGC, ou posts supprimés n'ont pas d'insights
           logger.info(
             "Post insights not available (normal for recent/UGC posts)",
             {
@@ -174,60 +179,114 @@ async function fetchInstagramPosts(config) {
           );
         }
 
-        const hashtags = instagram.extractHashtags(post.caption);
         const ownerUsername = post.username || config.username;
-
-        // Use pre-fetched carousel data
         const carouselChildren = allCarouselChildren[post.id] || null;
 
+        // Prepare post data for validation
+        const postData = {
+          id: post.id,
+          caption: post.caption,
+          mediaUrl: post.media_url,
+          thumbnailUrl: post.thumbnail_url,
+          permalink: post.permalink,
+          publishedAt: new Date(post.timestamp),
+          mediaType: post.media_type,
+          carouselChildren,
+          likeCount: post.like_count ?? 0,
+          commentsCount: post.comments_count ?? 0,
+          impressions: insights.impressions,
+          reach: insights.reach,
+          saved: insights.saved,
+          isTagged: post.isTagged,
+          ownerUsername,
+          configId: config.id,
+          shop: config.shop,
+        };
+
+        // Validate and sanitize post data
+        const validation = validateAndSanitizeInstagramPost(postData);
+        
+        if (!validation.success) {
+          logger.warn("Invalid post data, skipping", {
+            postId: post.id,
+            errors: validation.errors,
+            configId: config.id,
+          });
+          invalidPosts.push({ postId: post.id, errors: validation.errors });
+          return null;
+        }
+
+        const validatedPost = validation.data;
+        validPosts.push(validatedPost);
+
         return prisma.instagramPost.upsert({
-          where: { id: post.id },
+          where: { id: validatedPost.id },
           update: {
-            caption: post.caption || null,
-            mediaUrl: post.media_url,
-            thumbnailUrl: post.thumbnail_url || null,
-            permalink: post.permalink,
-            publishedAt: new Date(post.timestamp),
-            mediaType: post.media_type,
-            carouselChildren,
-            likeCount: post.like_count ?? 0,
-            commentsCount: post.comments_count ?? 0,
-            impressions: insights.impressions,
-            reach: insights.reach,
-            saved: insights.saved,
-            isTagged: post.isTagged,
-            ownerUsername,
+            caption: validatedPost.caption,
+            mediaUrl: validatedPost.mediaUrl,
+            thumbnailUrl: validatedPost.thumbnailUrl,
+            permalink: validatedPost.permalink,
+            publishedAt: validatedPost.publishedAt,
+            mediaType: validatedPost.mediaType,
+            carouselChildren: validatedPost.carouselChildren,
+            likeCount: validatedPost.likeCount,
+            commentsCount: validatedPost.commentsCount,
+            impressions: validatedPost.impressions,
+            reach: validatedPost.reach,
+            saved: validatedPost.saved,
+            isTagged: validatedPost.isTagged,
+            ownerUsername: validatedPost.ownerUsername,
           },
           create: {
-            id: post.id,
-            configId: config.id,
-            shop: config.shop,
-            isTagged: post.isTagged,
-            caption: post.caption || null,
-            mediaUrl: post.media_url,
-            thumbnailUrl: post.thumbnail_url || null,
-            permalink: post.permalink,
-            publishedAt: new Date(post.timestamp),
-            mediaType: post.media_type,
-            carouselChildren,
-            likeCount: post.like_count ?? 0,
-            commentsCount: post.comments_count ?? 0,
-            impressions: insights.impressions,
-            reach: insights.reach,
-            saved: insights.saved,
-            ownerUsername,
+            id: validatedPost.id,
+            configId: validatedPost.configId,
+            shop: validatedPost.shop,
+            isTagged: validatedPost.isTagged,
+            caption: validatedPost.caption,
+            mediaUrl: validatedPost.mediaUrl,
+            thumbnailUrl: validatedPost.thumbnailUrl,
+            permalink: validatedPost.permalink,
+            publishedAt: validatedPost.publishedAt,
+            mediaType: validatedPost.mediaType,
+            carouselChildren: validatedPost.carouselChildren,
+            likeCount: validatedPost.likeCount,
+            commentsCount: validatedPost.commentsCount,
+            impressions: validatedPost.impressions,
+            reach: validatedPost.reach,
+            saved: validatedPost.saved,
+            ownerUsername: validatedPost.ownerUsername,
           },
         });
       }),
     );
 
-    logger.info("Posts saved successfully", { configId: config.id });
+    if (invalidPosts.length > 0) {
+      logger.warn("Some posts were invalid and skipped", {
+        configId: config.id,
+        invalidCount: invalidPosts.length,
+        validCount: validPosts.length,
+        invalidPosts: invalidPosts.slice(0, 5), // Log first 5 for debugging
+      });
+    }
+
+    const fetchDuration = performance.now() - fetchStartTime;
+    
+    logger.info("Posts saved successfully", { 
+      configId: config.id,
+      duration: `${fetchDuration.toFixed(0)}ms`,
+      validCount: validPosts.length,
+      invalidCount: invalidPosts.length,
+      totalProcessed: allPosts.length
+    });
 
     return allPosts;
   } catch (error) {
+    const fetchDuration = performance.now() - fetchStartTime;
+    
     logger.error("Failed to fetch Instagram posts", error, {
       configId: config.id,
       username: config.username,
+      duration: `${fetchDuration.toFixed(0)}ms`,
     });
 
     if (error.message.includes("token") || error.message.includes("auth")) {
@@ -252,6 +311,8 @@ async function fetchInstagramPosts(config) {
 }
 
 export const loader = async ({ request }) => {
+  const pageLoadStartTime = performance.now();
+  
   try {
     const { session } = await authenticate.admin(request);
     const shop = session.shop;
@@ -310,6 +371,17 @@ export const loader = async ({ request }) => {
       });
     }
 
+    const totalDuration = performance.now() - pageLoadStartTime;
+
+    logger.info("Page load completed successfully", {
+      shop,
+      duration: `${totalDuration.toFixed(0)}ms`,
+      postCount: posts.length,
+      hasConfig: !!config,
+      hasErrors: errors.length > 0,
+      errorCount: errors.length,
+    });
+
     return {
       shop,
       isConfigured: !!config,
@@ -318,7 +390,13 @@ export const loader = async ({ request }) => {
       errors: errors.length > 0 ? errors : null,
     };
   } catch (error) {
-    logger.error("Loader error in app._index", error);
+    const totalDuration = performance.now() - pageLoadStartTime;
+    
+    logger.error("Loader error in app._index", error, {
+      duration: `${totalDuration.toFixed(0)}ms`,
+      action: "page_load",
+    });
+    
     return {
       shop: "unknown",
       isConfigured: false,

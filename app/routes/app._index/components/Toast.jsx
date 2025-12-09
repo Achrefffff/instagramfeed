@@ -5,7 +5,7 @@ export function Toast({ message, isError, onDismiss }) {
 
   if (!message) return null;
 
-  const tone = isError ? "critical" : "success";
+  const tone = isError ? "critical" : "info";
 
   return (
     <div

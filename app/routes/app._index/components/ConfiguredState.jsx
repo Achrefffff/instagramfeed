@@ -179,16 +179,31 @@ export function ConfiguredState({
       const result = await response.json();
 
       if (response.ok) {
-        showToast(t("messages.saveSuccess", { count: result.postsCount }));
+        if (window.shopify?.toast) {
+          window.shopify.toast.show(t("messages.saveSuccess", { count: result.postsCount }));
+        } else {
+          showToast(t("messages.saveSuccess", { count: result.postsCount }));
+        }
         setSelectedPosts(new Set());
       } else {
-        showToast(
-          result.error || t("messages.networkError", { message: "Unknown" }),
-          true,
-        );
+        if (window.shopify?.toast) {
+          window.shopify.toast.show(
+            result.error || t("messages.networkError", { message: "Unknown" }),
+            { isError: true }
+          );
+        } else {
+          showToast(
+            result.error || t("messages.networkError", { message: "Unknown" }),
+            true,
+          );
+        }
       }
     } catch (error) {
-      showToast(t("messages.networkError", { message: error.message }), true);
+      if (window.shopify?.toast) {
+        window.shopify.toast.show(t("messages.networkError", { message: error.message }), { isError: true });
+      } else {
+        showToast(t("messages.networkError", { message: error.message }), true);
+      }
     } finally {
       setIsSaving(false);
     }
