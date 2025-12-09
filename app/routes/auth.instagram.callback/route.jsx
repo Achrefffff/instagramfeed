@@ -244,6 +244,7 @@ export const loader = async ({ request }) => {
     logger.info("Saving Instagram configuration", {
       shop,
       username: sanitizedUsername,
+      instagramId: instagramAccountId,
     });
 
     // Calculer la date d'expiration du token (~60 jours)
@@ -258,6 +259,7 @@ export const loader = async ({ request }) => {
         update: {
           accessToken,
           username: sanitizedUsername,
+          instagramId: instagramAccountId,
           isActive: true,
           tokenExpiresAt,
           lastRefreshedAt: new Date(),
@@ -266,6 +268,7 @@ export const loader = async ({ request }) => {
           shop,
           accessToken,
           username: sanitizedUsername,
+          instagramId: instagramAccountId,
           isActive: true,
           tokenExpiresAt,
           lastRefreshedAt: new Date(),

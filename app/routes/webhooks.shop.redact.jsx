@@ -21,27 +21,7 @@ export const action = async ({ request }) => {
 
   try {
     // Supprimer toutes les données Instagram du marchand
-    // 1. Supprimer les images de carrousels
-    await prisma.carouselImage.deleteMany({
-      where: {
-        post: {
-          config: {
-            shop: sanitizedShop,
-          },
-        },
-      },
-    });
-
-    // 2. Supprimer les posts Instagram
-    await prisma.instagramPost.deleteMany({
-      where: {
-        config: {
-          shop: sanitizedShop,
-        },
-      },
-    });
-
-    // 3. Supprimer les configurations Instagram
+    // CASCADE delete sur InstagramConfig supprimera automatiquement les posts
     await prisma.instagramConfig.deleteMany({
       where: {
         shop: sanitizedShop,
@@ -57,7 +37,10 @@ export const action = async ({ request }) => {
 
     logger.info("Shop data successfully redacted", { shop: sanitizedShop });
 
-    return json({ message: "Shop data redacted successfully" }, { status: 200 });
+    return json(
+      { message: "Shop data redacted successfully" },
+      { status: 200 },
+    );
   } catch (error) {
     logger.error("Error redacting shop data", error, { shop: sanitizedShop });
     return json({ error: "Failed to redact shop data" }, { status: 500 });

@@ -1,8 +1,15 @@
 import { data } from "react-router";
 import { authenticate } from "../../shopify.server";
 import prisma from "../../db.server";
-import { saveSelectionSchema, validateData } from "../../utils/validation.server";
-import { handleError, ValidationError, DatabaseError } from "../../utils/errors.server";
+import {
+  saveSelectionSchema,
+  validateData,
+} from "../../utils/validation.server";
+import {
+  handleError,
+  ValidationError,
+  DatabaseError,
+} from "../../utils/errors.server";
 import { logger } from "../../utils/logger.server";
 import { checkRateLimit, RATE_LIMITS } from "../../utils/rateLimit.server";
 
@@ -16,7 +23,7 @@ export const action = async ({ request }) => {
     const rateLimit = checkRateLimit(
       `save:${shop}`,
       RATE_LIMITS.SAVE.max,
-      RATE_LIMITS.SAVE.window
+      RATE_LIMITS.SAVE.window,
     );
 
     if (!rateLimit.allowed) {
@@ -26,17 +33,22 @@ export const action = async ({ request }) => {
         {
           status: 429,
           headers: {
-            "Retry-After": Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+            "Retry-After": Math.ceil(
+              (rateLimit.resetTime - Date.now()) / 1000,
+            ).toString(),
           },
-        }
+        },
       );
     }
 
     const body = await request.json();
-    
+
     const validation = validateData(saveSelectionSchema, body);
     if (!validation.success) {
-      throw new ValidationError(validation.errors[0].message, validation.errors);
+      throw new ValidationError(
+        validation.errors[0].message,
+        validation.errors,
+      );
     }
 
     const { selectedPostIds } = validation.data;
@@ -50,22 +62,23 @@ export const action = async ({ request }) => {
         },
         select: {
           id: true,
-          username: true,
           ownerUsername: true,
           isTagged: true,
           mediaUrl: true,
           thumbnailUrl: true,
           mediaType: true,
-          carouselImages: true,
+          carouselChildren: true,
           permalink: true,
           caption: true,
           likeCount: true,
           commentsCount: true,
-          hashtags: true,
         },
       });
     } catch (error) {
-      throw new DatabaseError("Erreur lors de la récupération des posts", error);
+      throw new DatabaseError(
+        "Erreur lors de la récupération des posts",
+        error,
+      );
     }
 
     if (posts.length === 0) {
@@ -79,7 +92,7 @@ export const action = async ({ request }) => {
         shop {
           id
         }
-      }`
+      }`,
     );
 
     const shopData = await shopResponse.json();
@@ -104,7 +117,7 @@ export const action = async ({ request }) => {
             message
           }
         }
-      }`
+      }`,
     );
 
     const metafieldValue = JSON.stringify({ posts });
@@ -136,7 +149,7 @@ export const action = async ({ request }) => {
             },
           ],
         },
-      }
+      },
     );
 
     const result = await response.json();
@@ -148,7 +161,7 @@ export const action = async ({ request }) => {
       });
       return data(
         { error: result.data.metafieldsSet.userErrors[0].message },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

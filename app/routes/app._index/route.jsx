@@ -96,6 +96,62 @@ async function fetchInstagramPosts(config) {
       totalCount: allPosts.length,
     });
 
+    // Step 1: Collect all carousel post IDs and fetch them in parallel
+    const carouselPostIds = allPosts
+      .filter((post) => post.media_type === "CAROUSEL_ALBUM")
+      .map((post) => post.id);
+
+    let allCarouselChildren = {};
+    if (carouselPostIds.length > 0) {
+      logger.info("Fetching carousel children in parallel", {
+        configId: config.id,
+        carouselCount: carouselPostIds.length,
+      });
+
+      try {
+        const carouselResults = await Promise.all(
+          carouselPostIds.map(async (postId) => {
+            try {
+              const children = await instagram.getCarouselChildren(
+                postId,
+                activeConfig.accessToken,
+              );
+              return { postId, children };
+            } catch (error) {
+              logger.warn("Failed to fetch carousel children for post", {
+                postId,
+                configId: config.id,
+                error: error?.message,
+              });
+              return { postId, children: null };
+            }
+          }),
+        );
+
+        // Convert to lookup map for quick access
+        carouselResults.forEach(({ postId, children }) => {
+          if (children && children.length > 0) {
+            allCarouselChildren[postId] = JSON.stringify(
+              children.map((child) => ({
+                url: child.media_url,
+                type: child.media_type,
+              })),
+            );
+          }
+        });
+
+        logger.info("Carousel children fetched successfully", {
+          configId: config.id,
+          carouselCount: Object.keys(allCarouselChildren).length,
+        });
+      } catch (error) {
+        logger.error("Failed to fetch carousel children batch", error, {
+          configId: config.id,
+        });
+      }
+    }
+
+    // Step 2: Process posts with pre-fetched carousel data
     await Promise.all(
       allPosts.map(async (post) => {
         let insights = { impressions: null, reach: null, saved: null };
@@ -106,77 +162,60 @@ async function fetchInstagramPosts(config) {
           );
         } catch (error) {
           // C'est normal : posts récents, UGC, ou posts supprimés n'ont pas d'insights
-          logger.info("Post insights not available (normal for recent/UGC posts)", {
-            postId: post.id,
-            shop: config.shop,
-            reason: error?.message?.includes('does not exist') ? 'Post deleted or UGC' : 'Recent post or no permissions',
-          });
+          logger.info(
+            "Post insights not available (normal for recent/UGC posts)",
+            {
+              postId: post.id,
+              shop: config.shop,
+              reason: error?.message?.includes("does not exist")
+                ? "Post deleted or UGC"
+                : "Recent post or no permissions",
+            },
+          );
         }
 
         const hashtags = instagram.extractHashtags(post.caption);
         const ownerUsername = post.username || config.username;
 
-        let carouselImages = null;
-        if (post.media_type === "CAROUSEL_ALBUM") {
-          try {
-            const children = await instagram.getCarouselChildren(
-              post.id,
-              activeConfig.accessToken,
-            );
-            if (children.length > 0) {
-              carouselImages = JSON.stringify(
-                children.map((child) => ({
-                  url: child.media_url,
-                  type: child.media_type,
-                })),
-              );
-            }
-          } catch (error) {
-            logger.warn("Failed to fetch carousel children", {
-              postId: post.id,
-              shop: config.shop,
-              error: error?.message,
-            });
-          }
-        }
+        // Use pre-fetched carousel data
+        const carouselChildren = allCarouselChildren[post.id] || null;
 
         return prisma.instagramPost.upsert({
           where: { id: post.id },
           update: {
-            ownerUsername,
             caption: post.caption || null,
             mediaUrl: post.media_url,
             thumbnailUrl: post.thumbnail_url || null,
-            carouselImages,
             permalink: post.permalink,
-            timestamp: new Date(post.timestamp),
+            publishedAt: new Date(post.timestamp),
             mediaType: post.media_type,
+            carouselChildren,
             likeCount: post.like_count ?? 0,
             commentsCount: post.comments_count ?? 0,
             impressions: insights.impressions,
             reach: insights.reach,
             saved: insights.saved,
-            hashtags,
+            isTagged: post.isTagged,
+            ownerUsername,
           },
           create: {
             id: post.id,
+            configId: config.id,
             shop: config.shop,
-            username: config.username,
-            ownerUsername,
             isTagged: post.isTagged,
             caption: post.caption || null,
             mediaUrl: post.media_url,
             thumbnailUrl: post.thumbnail_url || null,
-            carouselImages,
             permalink: post.permalink,
-            timestamp: new Date(post.timestamp),
+            publishedAt: new Date(post.timestamp),
             mediaType: post.media_type,
+            carouselChildren,
             likeCount: post.like_count ?? 0,
             commentsCount: post.comments_count ?? 0,
             impressions: insights.impressions,
             reach: insights.reach,
             saved: insights.saved,
-            hashtags,
+            ownerUsername,
           },
         });
       }),
@@ -253,11 +292,19 @@ export const loader = async ({ request }) => {
 
       posts = await prisma.instagramPost.findMany({
         where: {
-          shop,
-          username: config.username,
+          config: {
+            shop,
+          },
+        },
+        include: {
+          config: {
+            select: {
+              username: true,
+            },
+          },
         },
         orderBy: {
-          timestamp: "desc",
+          publishedAt: "desc",
         },
         take: 100,
       });
@@ -283,13 +330,7 @@ export const loader = async ({ request }) => {
 };
 
 export default function Index() {
-  const {
-    shop,
-    isConfigured,
-    posts,
-    username,
-    errors,
-  } = useLoaderData();
+  const { shop, isConfigured, posts, username, errors } = useLoaderData();
   const actionData = useActionData();
   const navigate = useNavigate();
   const navigation = useNavigation();
@@ -379,11 +420,7 @@ export default function Index() {
         {!isConfigured ? (
           <EmptyState shop={shop} />
         ) : (
-          <ConfiguredState
-            posts={posts}
-            username={username}
-            shop={shop}
-          />
+          <ConfiguredState posts={posts} username={username} shop={shop} />
         )}
       </AppErrorBoundary>
     </s-page>

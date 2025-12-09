@@ -31,7 +31,15 @@ export function PostCard({
   const renderMedia = () => {
     if (mediaError) {
       return (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#6d7175" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            color: "#6d7175",
+          }}
+        >
           <s-text variant="bodySm">{t("post.mediaUnavailable")}</s-text>
         </div>
       );
@@ -66,13 +74,13 @@ export function PostCard({
   return (
     <div
       onClick={handleCardClick}
-      style={{ 
-        position: "relative", 
+      style={{
+        position: "relative",
         cursor: "pointer",
         border: "1px solid #e1e3e5",
         borderRadius: "8px",
         padding: "16px",
-        backgroundColor: "#fff"
+        backgroundColor: "#fff",
       }}
     >
       <div
@@ -95,11 +103,13 @@ export function PostCard({
           <s-stack direction="inline" gap="tight" blockAlign="center">
             <s-icon type="profile" />
             <s-text variant="bodyMd" fontWeight="semibold">
-              {post.ownerUsername || post.accountUsername}
+              {post.isTagged
+                ? post.ownerUsername || "Unknown"
+                : post.config?.username || "Unknown"}
             </s-text>
           </s-stack>
           <s-text variant="bodySm" tone="subdued">
-            {new Date(post.timestamp).toLocaleDateString()}
+            {new Date(post.publishedAt || post.timestamp).toLocaleDateString()}
           </s-text>
         </s-stack>
 
@@ -159,13 +169,14 @@ export function PostCard({
           </s-stack>
         )}
 
-        {post.caption && (
-          <s-text variant="bodySm">
-            {post.caption}
-          </s-text>
-        )}
+        {post.caption && <s-text variant="bodySm">{post.caption}</s-text>}
 
-        <s-stack direction="inline" gap="base" inlineAlign="space-between" blockAlign="center">
+        <s-stack
+          direction="inline"
+          gap="base"
+          inlineAlign="space-between"
+          blockAlign="center"
+        >
           <div onClick={(e) => e.stopPropagation()}>
             <s-link href={post.permalink} target="_blank">
               {t("post.viewOnInstagram")}

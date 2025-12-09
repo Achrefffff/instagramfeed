@@ -93,27 +93,51 @@ async function retryWithBackoff(
   throw lastError;
 }
 
-async function fetchWithErrorHandling(url, options = {}) {
+async function fetchWithErrorHandling(url, options = {}, timeoutMs = 10000) {
   return retryWithBackoff(async () => {
     try {
-      const response = await fetch(url, options);
-      const data = await response.json();
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      if (!response.ok) {
-        const error = new InstagramAPIError(
-          data.error?.message || "Instagram API request failed",
-          response.status,
-          data,
-        );
-        logger.error("Instagram API error", error, {
-          url: url.split("?")[0],
-          status: response.status,
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal,
         });
-        throw error;
+        const data = await response.json();
+
+        if (!response.ok) {
+          const error = new InstagramAPIError(
+            data.error?.message || "Instagram API request failed",
+            response.status,
+            data,
+          );
+          logger.error("Instagram API error", error, {
+            url: url.split("?")[0],
+            status: response.status,
+          });
+          throw error;
+        }
+
+        return data;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    } catch (error) {
+      if (error.name === "AbortError") {
+        const timeoutError = new InstagramAPIError(
+          `Request timeout after ${timeoutMs}ms`,
+          408,
+          null,
+        );
+        logger.error("Instagram request timeout", error, {
+          url: url.split("?")[0],
+          timeoutMs,
+        });
+        throw timeoutError;
       }
 
-      return data;
-    } catch (error) {
       if (error instanceof InstagramAPIError) {
         throw error;
       }
@@ -412,7 +436,9 @@ export const instagram = {
       // Insights non disponibles : post récent, UGC, ou supprimé
       logger.info("Insights not available for post", {
         mediaId: mediaId?.substring(0, 10),
-        reason: error?.message?.includes('does not exist') ? 'deleted_or_ugc' : 'recent_or_no_permission',
+        reason: error?.message?.includes("does not exist")
+          ? "deleted_or_ugc"
+          : "recent_or_no_permission",
       });
       return {
         impressions: null,

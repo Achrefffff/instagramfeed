@@ -26,50 +26,64 @@ model Session {
 }
 
 model InstagramConfig {
-  id          String   @id @default(cuid())
-  shop        String   @unique
-  accessToken String
-  username    String
-  isActive    Boolean  @default(true)
-  tokenExpiresAt DateTime? // Long-lived token expire après ~60 jours
-  lastRefreshedAt DateTime? // Dernière tentative de refresh
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String            @id @default(cuid())
+  shop              String            @unique
+  instagramId       String            @unique  // ID du compte Instagram
+  username          String            @unique  // Le pseudo Instagram
+  accessToken       String
+  tokenExpiresAt    DateTime
+  lastRefreshedAt   DateTime?
+  isActive          Boolean           @default(true)
+  
+  // Relations
+  posts             InstagramPost[]
 
-  @@index([shop, isActive])
-  @@index([shop, tokenExpiresAt])
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([tokenExpiresAt])
+  @@index([isActive])
 }
 
 model InstagramPost {
-  id             String   @id
-  shop           String
-  username       String
-  ownerUsername  String?
-  isTagged       Boolean  @default(false)
-  mediaUrl       String
-  thumbnailUrl   String?
-  carouselImages String?
-  permalink      String
-  caption        String?
-  timestamp      DateTime
-  mediaType      String
-  likeCount      Int      @default(0)
-  commentsCount  Int      @default(0)
-  impressions    Int?
-  reach          Int?
-  saved          Int?
-  hashtags       String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now()) @updatedAt
+  id                String            @id
+  configId          String
+  config            InstagramConfig   @relation(fields: [configId], references: [id], onDelete: Cascade)
+  
+  // Metadata du post
+  shop              String            // Référence implicite pour queries optimisées
+  mediaUrl          String
+  thumbnailUrl      String?
+  permalink         String
+  caption           String?
+  mediaType         String            // IMAGE, VIDEO, CAROUSEL_ALBUM
+  carouselChildren  String?           // JSON string des enfants du carrousel (images et vidéos)
+  
+  // Ownership tracking (pour les posts taggés de tiers)
+  ownerUsername     String?           // Créateur du post si différent de config.username
+  
+  // Engagement
+  likeCount         Int               @default(0)
+  commentsCount     Int               @default(0)
+  
+  // Insights (nullable si pas disponible)
+  impressions       Int?
+  reach             Int?
+  saved             Int?
+  
+  // Classification
+  isTagged          Boolean           @default(false)
+  
+  // Timestamps
+  publishedAt       DateTime          // Quand publié sur Instagram
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
-
-  @@index([shop, username])
-  @@index([shop, timestamp])
-  @@index([shop, likeCount])
-  @@index([shop, commentsCount])
-  @@index([shop, impressions])
-  @@index([shop, reach])
-  @@index([shop, saved])
+  @@unique([id, configId])
+  @@index([configId, publishedAt])
+  @@index([configId, likeCount])
+  @@index([configId, impressions])
+  @@index([configId, isTagged])
 }
 
 

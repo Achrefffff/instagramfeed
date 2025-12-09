@@ -9,17 +9,12 @@ export const action = async ({ request }) => {
 
   try {
     // Supprimer toutes les données du marchand
-    // 1. Supprimer les posts Instagram
-    await prisma.instagramPost.deleteMany({
-      where: { shop },
-    });
-
-    // 2. Supprimer les configurations Instagram
+    // CASCADE delete sur InstagramConfig supprimera automatiquement les posts
     await prisma.instagramConfig.deleteMany({
       where: { shop },
     });
 
-    // 3. Supprimer les sessions Shopify
+    // Supprimer les sessions Shopify
     if (session) {
       await prisma.session.deleteMany({ where: { shop } });
     }

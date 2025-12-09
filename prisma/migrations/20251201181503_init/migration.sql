@@ -23,11 +23,12 @@ CREATE TABLE "Session" (
 CREATE TABLE "InstagramConfig" (
     "id" TEXT NOT NULL,
     "shop" TEXT NOT NULL,
-    "accessToken" TEXT NOT NULL,
+    "instagramId" TEXT NOT NULL,
     "username" TEXT NOT NULL,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "tokenExpiresAt" TIMESTAMP(3),
+    "accessToken" TEXT NOT NULL,
+    "tokenExpiresAt" TIMESTAMP(3) NOT NULL,
     "lastRefreshedAt" TIMESTAMP(3),
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -37,55 +38,56 @@ CREATE TABLE "InstagramConfig" (
 -- CreateTable
 CREATE TABLE "InstagramPost" (
     "id" TEXT NOT NULL,
+    "configId" TEXT NOT NULL,
     "shop" TEXT NOT NULL,
-    "username" TEXT NOT NULL,
-    "ownerUsername" TEXT,
-    "isTagged" BOOLEAN NOT NULL DEFAULT false,
     "mediaUrl" TEXT NOT NULL,
     "thumbnailUrl" TEXT,
-    "carouselImages" TEXT,
     "permalink" TEXT NOT NULL,
     "caption" TEXT,
-    "timestamp" TIMESTAMP(3) NOT NULL,
     "mediaType" TEXT NOT NULL,
     "likeCount" INTEGER NOT NULL DEFAULT 0,
     "commentsCount" INTEGER NOT NULL DEFAULT 0,
     "impressions" INTEGER,
     "reach" INTEGER,
     "saved" INTEGER,
-    "hashtags" TEXT,
+    "isTagged" BOOLEAN NOT NULL DEFAULT false,
+    "publishedAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "InstagramPost_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE INDEX "InstagramConfig_shop_isActive_idx" ON "InstagramConfig"("shop", "isActive");
+CREATE UNIQUE INDEX "InstagramConfig_shop_key" ON "InstagramConfig"("shop");
 
 -- CreateIndex
-CREATE INDEX "InstagramConfig_shop_tokenExpiresAt_idx" ON "InstagramConfig"("shop", "tokenExpiresAt");
+CREATE UNIQUE INDEX "InstagramConfig_instagramId_key" ON "InstagramConfig"("instagramId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "InstagramConfig_shop_username_key" ON "InstagramConfig"("shop", "username");
+CREATE UNIQUE INDEX "InstagramConfig_username_key" ON "InstagramConfig"("username");
 
 -- CreateIndex
-CREATE INDEX "InstagramPost_shop_username_idx" ON "InstagramPost"("shop", "username");
+CREATE INDEX "InstagramConfig_tokenExpiresAt_idx" ON "InstagramConfig"("tokenExpiresAt");
 
 -- CreateIndex
-CREATE INDEX "InstagramPost_shop_timestamp_idx" ON "InstagramPost"("shop", "timestamp");
+CREATE INDEX "InstagramConfig_isActive_idx" ON "InstagramConfig"("isActive");
 
 -- CreateIndex
-CREATE INDEX "InstagramPost_shop_likeCount_idx" ON "InstagramPost"("shop", "likeCount");
+CREATE UNIQUE INDEX "InstagramPost_id_configId_key" ON "InstagramPost"("id", "configId");
 
 -- CreateIndex
-CREATE INDEX "InstagramPost_shop_commentsCount_idx" ON "InstagramPost"("shop", "commentsCount");
+CREATE INDEX "InstagramPost_configId_publishedAt_idx" ON "InstagramPost"("configId", "publishedAt");
 
 -- CreateIndex
-CREATE INDEX "InstagramPost_shop_impressions_idx" ON "InstagramPost"("shop", "impressions");
+CREATE INDEX "InstagramPost_configId_likeCount_idx" ON "InstagramPost"("configId", "likeCount");
 
 -- CreateIndex
-CREATE INDEX "InstagramPost_shop_reach_idx" ON "InstagramPost"("shop", "reach");
+CREATE INDEX "InstagramPost_configId_impressions_idx" ON "InstagramPost"("configId", "impressions");
 
 -- CreateIndex
-CREATE INDEX "InstagramPost_shop_saved_idx" ON "InstagramPost"("shop", "saved");
+CREATE INDEX "InstagramPost_configId_isTagged_idx" ON "InstagramPost"("configId", "isTagged");
+
+-- AddForeignKey
+ALTER TABLE "InstagramPost" ADD CONSTRAINT "InstagramPost_configId_fkey" FOREIGN KEY ("configId") REFERENCES "InstagramConfig"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
