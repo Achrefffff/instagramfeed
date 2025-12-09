@@ -1,4 +1,4 @@
-# 📸 Hop - Instagram Feed pour Shopify
+# 📸 SocialFlux - Instagram Feed pour Shopify
 
 Application Shopify permettant de connecter et synchroniser plusieurs comptes Instagram Business pour afficher leurs posts directement dans l'admin Shopify.
 
@@ -40,7 +40,7 @@ Application Shopify permettant de connecter et synchroniser plusieurs comptes In
 ## Structure du Projet
 
 ```
-hop/
+socialflux/
 ├── app/
 │   ├── routes/
 │   │   ├── app._index/              # Page principale

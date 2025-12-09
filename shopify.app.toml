@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "b403c2e13733c9e3135f9d0e5a41f716"
-name = "hop"
+name = "SocialFlux"
 application_url = "https://instagramfeed-jz6z.onrender.com"
 embedded = true
 

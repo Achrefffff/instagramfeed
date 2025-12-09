@@ -389,6 +389,7 @@ export const instagram = {
       throw new Error("Media ID and access token are required");
     }
 
+    // Note: impressions n'est plus supporté depuis API v22.0
     const metrics = "reach,saved";
     const url = `${FACEBOOK_GRAPH_URL}/${mediaId}/insights?metric=${metrics}&access_token=${accessToken}`;
 
@@ -403,15 +404,20 @@ export const instagram = {
       }
 
       return {
-        impressions: null,
+        impressions: null, // Non supporté depuis API v22.0
         reach: insights.reach || 0,
         saved: insights.saved || 0,
       };
     } catch (error) {
+      // Insights non disponibles : post récent, UGC, ou supprimé
+      logger.info("Insights not available for post", {
+        mediaId: mediaId?.substring(0, 10),
+        reason: error?.message?.includes('does not exist') ? 'deleted_or_ugc' : 'recent_or_no_permission',
+      });
       return {
         impressions: null,
-        reach: null,
-        saved: null,
+        reach: 0,
+        saved: 0,
       };
     }
   },

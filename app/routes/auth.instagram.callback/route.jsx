@@ -97,9 +97,57 @@ export const loader = async ({ request }) => {
 
     if (!Array.isArray(pages) || pages.length === 0) {
       logger.warn("No Facebook pages found", { shop });
-      throw new InstagramAPIError(
-        "Aucune page Facebook trouvée. Connectez une page avec un compte Instagram Business.",
-        404,
+      return new Response(
+        `<!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Configuration requise</title>
+            <style>
+              body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f6f6f7; padding: 20px; }
+              .container { max-width: 500px; background: white; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+              h1 { color: #bf0711; margin: 0 0 16px 0; font-size: 20px; }
+              p { color: #202223; margin: 0 0 12px 0; line-height: 1.5; }
+              .steps { background: #f6f6f7; padding: 16px; border-radius: 6px; margin: 16px 0; }
+              .steps ol { margin: 8px 0; padding-left: 20px; }
+              .steps li { margin: 8px 0; }
+              .button { display: inline-block; background: #008060; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin-top: 16px; }
+              .button:hover { background: #006e52; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>⚠️ Page Facebook requise</h1>
+              <p>Votre compte Facebook n'a pas de Page connectée à Instagram Business.</p>
+              
+              <div class="steps">
+                <strong>Pour utiliser SocialFlux, vous devez :</strong>
+                <ol>
+                  <li>Créer une Page Facebook (si vous n'en avez pas)</li>
+                  <li>Convertir votre Instagram en compte Business</li>
+                  <li>Lier votre Instagram à votre Page Facebook</li>
+                </ol>
+              </div>
+              
+              <p style="font-size: 14px; color: #6d7175;">
+                <strong>Besoin d'aide ?</strong><br>
+                Consultez notre guide : <a href="https://socialflux.fr/help/connect-instagram" target="_blank">Comment connecter Instagram</a>
+              </p>
+              
+              <a href="https://www.facebook.com/pages/create" target="_blank" class="button">Créer une Page Facebook</a>
+              
+              <p style="margin-top: 16px; font-size: 14px; color: #6d7175;">
+                Cette fenêtre va se fermer dans 10 secondes...
+              </p>
+            </div>
+            <script>
+              setTimeout(() => {
+                window.close();
+              }, 10000);
+            </script>
+          </body>
+        </html>`,
+        { headers: { "Content-Type": "text/html; charset=utf-8" } },
       );
     }
 
@@ -115,9 +163,58 @@ export const loader = async ({ request }) => {
         shop,
         pagesCount: pages.length,
       });
-      throw new InstagramAPIError(
-        "Aucun compte Instagram Business trouvé. Connectez votre Instagram à une page Facebook.",
-        404,
+      return new Response(
+        `<!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Instagram Business requis</title>
+            <style>
+              body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f6f6f7; padding: 20px; }
+              .container { max-width: 500px; background: white; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+              h1 { color: #bf0711; margin: 0 0 16px 0; font-size: 20px; }
+              p { color: #202223; margin: 0 0 12px 0; line-height: 1.5; }
+              .steps { background: #f6f6f7; padding: 16px; border-radius: 6px; margin: 16px 0; }
+              .steps ol { margin: 8px 0; padding-left: 20px; }
+              .steps li { margin: 8px 0; }
+              .button { display: inline-block; background: #008060; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin-top: 16px; }
+              .button:hover { background: #006e52; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>⚠️ Instagram Business non lié</h1>
+              <p>Votre Page Facebook n'est pas connectée à un compte Instagram Business.</p>
+              
+              <div class="steps">
+                <strong>Pour connecter Instagram à votre Page :</strong>
+                <ol>
+                  <li>Allez sur votre Page Facebook</li>
+                  <li>Paramètres → Instagram</li>
+                  <li>Cliquez "Connecter un compte"</li>
+                  <li>Entrez vos identifiants Instagram</li>
+                </ol>
+              </div>
+              
+              <p style="font-size: 14px; color: #6d7175;">
+                <strong>Besoin d'aide ?</strong><br>
+                Consultez notre guide : <a href="https://socialflux.fr/help/link-instagram" target="_blank">Lier Instagram à Facebook</a>
+              </p>
+              
+              <a href="https://www.facebook.com/pages/" target="_blank" class="button">Aller sur mes Pages</a>
+              
+              <p style="margin-top: 16px; font-size: 14px; color: #6d7175;">
+                Cette fenêtre va se fermer dans 10 secondes...
+              </p>
+            </div>
+            <script>
+              setTimeout(() => {
+                window.close();
+              }, 10000);
+            </script>
+          </body>
+        </html>`,
+        { headers: { "Content-Type": "text/html; charset=utf-8" } },
       );
     }
 

@@ -105,10 +105,11 @@ async function fetchInstagramPosts(config) {
             activeConfig.accessToken,
           );
         } catch (error) {
-          logger.warn("Failed to fetch post insights", {
+          // C'est normal : posts récents, UGC, ou posts supprimés n'ont pas d'insights
+          logger.info("Post insights not available (normal for recent/UGC posts)", {
             postId: post.id,
             shop: config.shop,
-            error: error?.message,
+            reason: error?.message?.includes('does not exist') ? 'Post deleted or UGC' : 'Recent post or no permissions',
           });
         }
 
